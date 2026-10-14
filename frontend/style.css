@@ -1,0 +1,335 @@
+:root {
+  --background: oklch(0.145 0 0);
+  --surface-1: oklch(0.175 0.005 270);
+  --surface-2: oklch(0.21 0.006 270);
+  --accent: oklch(0.7 0.15 250);
+  --accent-2: oklch(0.75 0.18 150);
+  --danger: oklch(0.65 0.2 25);
+  --text-primary: oklch(0.95 0 0);
+  --text-secondary: oklch(0.7 0 0);
+
+  --borda: rgba(255, 255, 255, 0.08);
+  --vidro: rgba(255, 255, 255, 0.05);
+  --raio: 16px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  padding: 24px clamp(12px, 4vw, 40px) 40px;
+  background: var(--background);
+  color: var(--text-primary);
+  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+  line-height: 1.5;
+}
+
+.fundo {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(60% 60% at 15% 0%, oklch(0.35 0.12 250 / 0.55), transparent 70%),
+    radial-gradient(50% 50% at 90% 10%, oklch(0.35 0.12 165 / 0.45), transparent 70%);
+}
+
+h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  letter-spacing: -0.02em;
+}
+
+h2 {
+  margin: 0 0 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+p {
+  margin: 0;
+}
+
+/* ---------- card com glassmorphism (modelo.md, secao 8) ---------- */
+.card {
+  background: var(--vidro);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  transition: transform 0.2s, box-shadow 0.2s;
+  padding: 20px;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+}
+
+/* ---------- topo ---------- */
+.topo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.topo__texto p {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.topo__acoes {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.timer {
+  display: grid;
+  gap: 2px;
+  text-align: right;
+  padding: 8px 14px;
+  border-radius: 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--borda);
+}
+
+.timer__rotulo,
+.timer__nota {
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.timer__valor {
+  font-variant-numeric: tabular-nums;
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: var(--accent-2);
+}
+
+.botao {
+  border: 1px solid transparent;
+  border-radius: 12px;
+  padding: 12px 20px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: oklch(0.15 0 0);
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  cursor: pointer;
+  transition: filter 0.2s, transform 0.2s;
+}
+
+.botao:hover {
+  filter: brightness(1.08);
+}
+
+.botao:active {
+  transform: scale(0.98);
+}
+
+.botao[disabled] {
+  filter: grayscale(0.6);
+  cursor: progress;
+}
+
+/* ---------- KPIs ---------- */
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.kpi h2 {
+  color: var(--text-primary);
+  font-size: 0.85rem;
+}
+
+.kpi__valor {
+  font-size: 1.9rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.kpi__nota {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.kpi__data {
+  margin-top: 6px;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+/* ---------- paineis ---------- */
+.painel {
+  margin-bottom: 24px;
+}
+
+.painel__cabecalho {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.filtros {
+  display: flex;
+  gap: 8px;
+}
+
+.chip {
+  border: 1px solid var(--borda);
+  background: var(--surface-1);
+  color: var(--text-secondary);
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.chip.is-ativo {
+  color: var(--text-primary);
+  border-color: var(--accent);
+  background: color-mix(in oklab, var(--accent) 22%, transparent);
+}
+
+.grafico {
+  position: relative;
+  height: clamp(260px, 38vh, 420px);
+}
+
+.grade {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 24px;
+}
+
+/* ---------- formulario ---------- */
+.formulario {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  align-items: end;
+}
+
+.formulario label {
+  display: grid;
+  gap: 6px;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.formulario input,
+.formulario select {
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--borda);
+  background: var(--surface-2);
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  font-family: inherit;
+}
+
+.resultado {
+  margin-top: 18px;
+  padding: 16px;
+  border-radius: 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--borda);
+}
+
+.resultado__valor {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--accent-2);
+}
+
+.resultado__detalhe {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+/* ---------- tabela ---------- */
+.tabela-envolucro {
+  overflow-x: auto;
+}
+
+.tabela {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.tabela th,
+.tabela td {
+  padding: 8px 10px;
+  text-align: right;
+  border-bottom: 1px solid var(--borda);
+  white-space: nowrap;
+}
+
+.tabela th:first-child,
+.tabela td:first-child {
+  text-align: left;
+}
+
+.tabela th {
+  color: var(--text-secondary);
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.72rem;
+  letter-spacing: 0.05em;
+}
+
+.tabela tbody tr:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.positivo {
+  color: var(--accent-2);
+}
+
+.negativo {
+  color: var(--danger);
+}
+
+.aviso {
+  margin-top: 12px;
+  font-size: 0.85rem;
+  color: var(--danger);
+}
+
+.rodape {
+  margin-top: 8px;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+@media (max-width: 560px) {
+  .timer {
+    text-align: left;
+  }
+
+  .topo__acoes {
+    width: 100%;
+    justify-content: space-between;
+  }
+}

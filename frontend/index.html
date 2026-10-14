@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>selic-ipca-tracker — indicadores do Brasil</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="fundo"></div>
+
+  <header class="topo card">
+    <div class="topo__texto">
+      <h1>selic-ipca-tracker</h1>
+      <p>Selic, IPCA, IGP-M e INPC — dados abertos do Banco Central</p>
+    </div>
+
+    <div class="topo__acoes">
+      <div class="timer" title="Tempo até a próxima atualização automática">
+        <span class="timer__rotulo">Próxima atualização</span>
+        <span class="timer__valor" id="timer">--:--:--</span>
+        <span class="timer__nota" id="timer-nota">consultando status…</span>
+      </div>
+      <button class="botao" id="botao-atualizar" type="button">Atualizar agora</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="kpis" aria-label="Indicadores atuais">
+      <article class="card kpi" data-indice="selic">
+        <h2>Selic</h2>
+        <p class="kpi__valor" id="kpi-selic-valor">—</p>
+        <p class="kpi__nota" id="kpi-selic-nota">acumulado 12 meses: —</p>
+        <p class="kpi__data" id="kpi-selic-data">—</p>
+      </article>
+      <article class="card kpi" data-indice="ipca">
+        <h2>IPCA</h2>
+        <p class="kpi__valor" id="kpi-ipca-valor">—</p>
+        <p class="kpi__nota" id="kpi-ipca-nota">acumulado 12 meses: —</p>
+        <p class="kpi__data" id="kpi-ipca-data">—</p>
+      </article>
+      <article class="card kpi" data-indice="igpm">
+        <h2>IGP-M</h2>
+        <p class="kpi__valor" id="kpi-igpm-valor">—</p>
+        <p class="kpi__nota" id="kpi-igpm-nota">acumulado 12 meses: —</p>
+        <p class="kpi__data" id="kpi-igpm-data">—</p>
+      </article>
+      <article class="card kpi" data-indice="inpc">
+        <h2>INPC</h2>
+        <p class="kpi__valor" id="kpi-inpc-valor">—</p>
+        <p class="kpi__nota" id="kpi-inpc-nota">acumulado 12 meses: —</p>
+        <p class="kpi__data" id="kpi-inpc-data">—</p>
+      </article>
+    </section>
+
+    <section class="card painel">
+      <div class="painel__cabecalho">
+        <h2>Comparativo de índices</h2>
+        <div class="filtros" id="filtros-periodo">
+          <button class="chip" type="button" data-anos="1">1 ano</button>
+          <button class="chip is-ativo" type="button" data-anos="5">5 anos</button>
+          <button class="chip" type="button" data-anos="10">10 anos</button>
+          <button class="chip" type="button" data-anos="0">Tudo</button>
+        </div>
+      </div>
+      <div class="grafico">
+        <canvas id="grafico-indices" height="120"></canvas>
+      </div>
+      <p class="aviso" id="aviso-grafico" hidden></p>
+    </section>
+
+    <section class="grade">
+      <article class="card painel">
+        <h2>Calculadora de correção monetária</h2>
+        <form class="formulario" id="formulario-calculadora">
+          <label>
+            Valor (R$)
+            <input type="number" id="calc-valor" value="1000" min="0.01" step="0.01" required />
+          </label>
+          <label>
+            Índice
+            <select id="calc-indice">
+              <option value="IPCA">IPCA</option>
+              <option value="IGP-M">IGP-M</option>
+              <option value="INPC">INPC</option>
+              <option value="Selic">Selic</option>
+            </select>
+          </label>
+          <label>
+            Data inicial
+            <input type="date" id="calc-inicial" value="2020-01-01" required />
+          </label>
+          <label>
+            Data final
+            <input type="date" id="calc-final" required />
+          </label>
+          <button class="botao" type="submit">Corrigir valor</button>
+        </form>
+        <div class="resultado" id="resultado-calculadora" hidden>
+          <p class="resultado__valor" id="resultado-valor">—</p>
+          <p class="resultado__detalhe" id="resultado-detalhe">—</p>
+        </div>
+        <p class="aviso" id="aviso-calculadora" hidden></p>
+      </article>
+
+      <article class="card painel">
+        <h2>Últimos 12 meses</h2>
+        <div class="tabela-envolucro">
+          <table class="tabela" id="tabela-recente">
+            <thead>
+              <tr>
+                <th>Mês</th>
+                <th>IPCA</th>
+                <th>IGP-M</th>
+                <th>INPC</th>
+                <th>Selic (mês)</th>
+              </tr>
+            </thead>
+            <tbody id="tabela-recente-corpo">
+              <tr><td colspan="5">carregando…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </article>
+    </section>
+  </main>
+
+  <footer class="rodape">
+    <span id="rodape-status">Fonte: BCB/SGS e BCB Olinda. Uso educacional.</span>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

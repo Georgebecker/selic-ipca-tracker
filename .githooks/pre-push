@@ -1,0 +1,47 @@
+#!/bin/sh
+# ------------------------------------------------------------------
+# Gancho pre-push do projeto — REGRA DE OURO
+# Bloqueia QUALQUER push de commits que contenham .env ou variantes
+# (o unico arquivo liberado e o .env.example, modelo sem segredos).
+# E a SEGUNDA barreira, depois do pre-commit: protege o envio ao
+# repositorio remoto mesmo que um commit tenha passado com --no-verify.
+# Regra do usuario (11/09/2026): o .env NUNCA pode ser enviado.
+# ------------------------------------------------------------------
+
+while read -r local_ref local_sha remote_ref remote_sha
+do
+    # exclusao de branch: nao ha commits para analisar
+    case "$local_sha" in
+        0000000000000000000000000000000000000000) continue ;;
+    esac
+
+    if [ "$remote_sha" = "0000000000000000000000000000000000000000" ]; then
+        # branch novo no remoto: analisa todos os commits alcancaveis
+        commits=$(git rev-list "$local_sha" 2>/dev/null)
+    else
+        # branch existente: analisa so os commits que serao enviados
+        commits=$(git rev-list "$remote_sha..$local_sha" 2>/dev/null)
+    fi
+
+    for commit in $commits
+    do
+        # --root inclui o primeiro commit do repositorio (que nao tem pai)
+        suspeitos=$(git diff-tree --root --no-commit-id --name-only -r "$commit" 2>/dev/null \
+            | grep -E '(^|/)\.env($|\.)' \
+            | grep -vE '(^|/)\.env\.example$')
+
+        if [ -n "$suspeitos" ]; then
+            echo "" >&2
+            echo "BLOQUEADO: o push contem arquivo(s) de segredo (.env)." >&2
+            echo "  commit $commit:" >&2
+            echo "$suspeitos" | sed 's/^/  -> /' >&2
+            echo "" >&2
+            echo "REGRA DE OURO: o .env NUNCA vai para o repositorio remoto." >&2
+            echo "Remova o arquivo do commit e reescreva o historico antes de tentar de novo." >&2
+            echo "" >&2
+            exit 1
+        fi
+    done
+done
+
+exit 0

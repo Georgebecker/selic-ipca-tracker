@@ -1,0 +1,5 @@
+$ python meu-loop-agente/medir_qualidade.py
+
+score_qualidade: 0.9482
+cobertura: 1.0000 (12/12 series com dados recentes)
+precisao: 0.9482 (erro medio 0.0026 p.p. | tolerancia 0.0500 p.p.)

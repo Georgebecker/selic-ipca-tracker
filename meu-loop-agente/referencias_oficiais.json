@@ -1,0 +1,38 @@
+{
+  "descricao": "Valores oficiais usados para medir a precisao dos acumulados do projeto. So o humano altera este arquivo.",
+  "tolerancia_pp": 0.05,
+  "dias_max_para_considerar_recente": 75,
+  "min_valores_por_serie": 12,
+  "series_acompanhadas": [
+    { "codigo_sgs": 432, "nome": "Selic meta", "periodicidade": "diaria" },
+    { "codigo_sgs": 4390, "nome": "Selic acumulada no mes", "periodicidade": "mensal" },
+    { "codigo_sgs": 433, "nome": "IPCA mensal", "periodicidade": "mensal" },
+    { "codigo_sgs": 13522, "nome": "IPCA acumulado 12 meses", "periodicidade": "mensal" },
+    { "codigo_sgs": 189, "nome": "IGP-M mensal", "periodicidade": "mensal" },
+    { "codigo_sgs": 188, "nome": "INPC mensal", "periodicidade": "mensal" },
+    { "codigo_sgs": 12, "nome": "CDI diario", "periodicidade": "diaria" },
+    { "codigo_sgs": 1, "nome": "Dolar PTAX venda", "periodicidade": "diaria" },
+    { "codigo_sgs": 7478, "nome": "IPCA-15", "periodicidade": "mensal" },
+    { "codigo_sgs": 192, "nome": "INCC-DI", "periodicidade": "mensal" },
+    { "codigo_sgs": 190, "nome": "IGP-DI", "periodicidade": "mensal" },
+    { "codigo_sgs": 25, "nome": "Poupanca", "periodicidade": "mensal" }
+  ],
+  "validacoes": [
+    {
+      "nome": "IPCA acumulado em 2024",
+      "tipo": "periodo",
+      "codigo_sgs": 433,
+      "de": "2024-01-01",
+      "ate": "2024-12-31",
+      "valor_oficial": 4.83,
+      "fonte": "BCB - IPCA acumulado 2024 = 4,83% (modelo.md, secao 3.8)"
+    },
+    {
+      "nome": "IPCA acumulado 12 meses (calculo do projeto x serie oficial 13522)",
+      "tipo": "acumulado_12m",
+      "codigo_sgs": 433,
+      "comparar_com": 13522,
+      "fonte": "BCB/SGS 13522 (IPCA acumulado 12 meses)"
+    }
+  ]
+}

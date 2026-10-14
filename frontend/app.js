@@ -1,0 +1,379 @@
+/* selic-ipca-tracker — dashboard (Vanilla JS + Chart.js)
+   Timer de 24h: conta no front, confere o estado real em GET /status e
+   chama POST /atualizar quando zera (modelo.md, secao 9). */
+
+const API = '';
+
+const INDICADORES_KPI = ['selic', 'ipca', 'igpm', 'inpc'];
+
+const SERIES_COMPARATIVO = [
+  { codigo: 433, rotulo: 'IPCA', chave: 'ipca', cor: '#3ddc97' },
+  { codigo: 189, rotulo: 'IGP-M', chave: 'igpm', cor: '#f5a524' },
+  { codigo: 188, rotulo: 'INPC', chave: 'inpc', cor: '#c084fc' },
+  { codigo: 4390, rotulo: 'Selic (mes)', chave: 'selic', cor: '#4f8cff' }
+];
+
+const INTERVALO_PADRAO_HORAS = 24;
+const RESINCRONIZAR_MS = 30000;
+
+let segundosRestantes = INTERVALO_PADRAO_HORAS * 3600;
+let intervaloHoras = INTERVALO_PADRAO_HORAS;
+let relogio = null;
+let grafico = null;
+let anosSelecionados = 5;
+
+/* ------------------------------- utilidades ------------------------------- */
+
+function formatarPercentual(valor, casas = 2) {
+  if (valor === null || valor === undefined) return '—';
+  return `${valor.toFixed(casas)}%`;
+}
+
+function formatarMoeda(valor) {
+  if (valor === null || valor === undefined) return '—';
+  return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+}
+
+function formatarData(iso) {
+  if (!iso) return '—';
+  const [ano, mes, dia] = iso.slice(0, 10).split('-');
+  return `${dia}/${mes}/${ano}`;
+}
+
+function formatarMes(iso) {
+  const [ano, mes] = iso.slice(0, 7).split('-');
+  const nomes = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+  return `${nomes[Number(mes) - 1]}/${ano.slice(2)}`;
+}
+
+function formatarDuracao(segundos) {
+  const total = Math.max(0, Math.floor(segundos));
+  const horas = String(Math.floor(total / 3600)).padStart(2, '0');
+  const minutos = String(Math.floor((total % 3600) / 60)).padStart(2, '0');
+  const resto = String(total % 60).padStart(2, '0');
+  return `${horas}:${minutos}:${resto}`;
+}
+
+function classeSinal(valor) {
+  if (valor === null || valor === undefined) return '';
+  return valor < 0 ? 'negativo' : 'positivo';
+}
+
+async function buscarApi(caminho, opcoes) {
+  const resposta = await fetch(API + caminho, opcoes);
+  if (!resposta.ok) {
+    let detalhe = `${resposta.status} ${resposta.statusText}`;
+    try {
+      const corpo = await resposta.json();
+      if (corpo && corpo.detail) detalhe = corpo.detail;
+    } catch (erro) {
+      /* resposta sem JSON: mantem o texto do status */
+    }
+    throw new Error(detalhe);
+  }
+  return resposta.json();
+}
+
+function mostrarAviso(id, mensagem) {
+  const elemento = document.getElementById(id);
+  if (!elemento) return;
+  elemento.textContent = mensagem || '';
+  elemento.hidden = !mensagem;
+}
+
+/* --------------------------------- timer ---------------------------------- */
+
+function atualizarDisplayTimer() {
+  const elemento = document.getElementById('timer');
+  if (elemento) elemento.textContent = formatarDuracao(segundosRestantes);
+}
+
+function reiniciarTimer(segundos) {
+  segundosRestantes = Math.max(0, Math.floor(segundos));
+  atualizarDisplayTimer();
+}
+
+function iniciarRelogio() {
+  if (relogio) clearInterval(relogio);
+  relogio = setInterval(() => {
+    if (segundosRestantes > 0) {
+      segundosRestantes -= 1;
+      atualizarDisplayTimer();
+      return;
+    }
+    dispararAtualizacao();
+  }, 1000);
+}
+
+async function carregarStatus() {
+  try {
+    const estado = await buscarApi('/status');
+    intervaloHoras = estado.intervalo_horas || INTERVALO_PADRAO_HORAS;
+    const restantes = estado.segundos_restantes > 0
+      ? estado.segundos_restantes
+      : estado.ultima_atualizacao
+        ? 0
+        : intervaloHoras * 3600;
+    reiniciarTimer(restantes);
+
+    const nota = document.getElementById('timer-nota');
+    if (nota) {
+      nota.textContent = estado.ultima_atualizacao
+        ? `última: ${formatarData(estado.ultima_atualizacao)}`
+        : 'sem coleta registrada';
+    }
+
+    const rodape = document.getElementById('rodape-status');
+    if (rodape) {
+      rodape.textContent = estado.ultima_atualizacao
+        ? `Fonte: BCB/SGS. Última coleta: ${formatarData(estado.ultima_atualizacao)}. `
+          + `${estado.series_monitoradas} séries monitoradas.`
+        : 'Fonte: BCB/SGS. Nenhuma coleta registrada — use "Atualizar agora".';
+    }
+  } catch (erro) {
+    const nota = document.getElementById('timer-nota');
+    if (nota) nota.textContent = `status indisponível (${erro.message})`;
+  }
+}
+
+async function dispararAtualizacao() {
+  const botao = document.getElementById('botao-atualizar');
+  if (botao) {
+    botao.disabled = true;
+    botao.textContent = 'Atualizando…';
+  }
+
+  try {
+    const resultado = await buscarApi('/atualizar', { method: 'POST' });
+    if (resultado.status !== 'sucesso') {
+      mostrarAviso('aviso-grafico', `Coleta ${resultado.status}. Falhas: ${JSON.stringify(resultado.falhas)}`);
+    }
+    reiniciarTimer(intervaloHoras * 3600);
+    await Promise.all([carregarResumo(), carregarComparativo(), carregarStatus()]);
+  } catch (erro) {
+    mostrarAviso('aviso-grafico', `Falha ao atualizar: ${erro.message}`);
+    reiniciarTimer(60);
+  } finally {
+    if (botao) {
+      botao.disabled = false;
+      botao.textContent = 'Atualizar agora';
+    }
+  }
+}
+
+/* ----------------------------------- KPIs --------------------------------- */
+
+async function carregarResumo() {
+  const resumo = await buscarApi('/indicadores/resumo');
+
+  INDICADORES_KPI.forEach((chave) => {
+    const dados = resumo[chave];
+    const valor = document.getElementById(`kpi-${chave}-valor`);
+    const nota = document.getElementById(`kpi-${chave}-nota`);
+    const data = document.getElementById(`kpi-${chave}-data`);
+    if (!dados) return;
+
+    if (valor) valor.textContent = formatarPercentual(dados.atual);
+    if (nota) {
+      const acumulado = formatarPercentual(dados.acumulado_12m);
+      const oficial = dados.acumulado_12m_oficial !== null
+        && dados.acumulado_12m_oficial !== undefined
+        ? ` (oficial: ${formatarPercentual(dados.acumulado_12m_oficial)})`
+        : '';
+      nota.textContent = `acumulado 12 meses: ${acumulado}${oficial}`;
+    }
+    if (data) data.textContent = dados.data ? `referência: ${formatarData(dados.data)}` : 'sem dados';
+  });
+}
+
+/* --------------------------- grafico e tabela ----------------------------- */
+
+function inicioDoPeriodo(anos) {
+  if (!anos) return null;
+  const agora = new Date();
+  agora.setFullYear(agora.getFullYear() - anos);
+  return agora.toISOString().slice(0, 10);
+}
+
+function montarGrafico(eixo, series) {
+  const contexto = document.getElementById('grafico-indices');
+  if (!contexto || typeof Chart === 'undefined') return;
+
+  const conjuntos = SERIES_COMPARATIVO.map((definicao) => {
+    const serie = series.find((item) => item.codigo_sgs === definicao.codigo);
+    return {
+      label: definicao.rotulo,
+      data: serie ? serie.valores : [],
+      borderColor: definicao.cor,
+      backgroundColor: `${definicao.cor}22`,
+      borderWidth: 2,
+      pointRadius: 0,
+      pointHoverRadius: 4,
+      tension: 0.25,
+      spanGaps: true
+    };
+  });
+
+  const rotulos = eixo.map(formatarMes);
+
+  if (grafico) {
+    grafico.data.labels = rotulos;
+    grafico.data.datasets = conjuntos;
+    grafico.update();
+    return;
+  }
+
+  grafico = new Chart(contexto, {
+    type: 'line',
+    data: { labels: rotulos, datasets: conjuntos },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { labels: { color: 'rgba(240,240,240,0.85)' } },
+        tooltip: {
+          backgroundColor: 'rgba(20,20,24,0.85)',
+          borderColor: 'rgba(255,255,255,0.12)',
+          borderWidth: 1,
+          titleColor: '#fff',
+          bodyColor: 'rgba(240,240,240,0.9)',
+          callbacks: {
+            label: (item) => `${item.dataset.label}: ${formatarPercentual(item.parsed.y)}`
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { color: 'rgba(255,255,255,0.1)' },
+          ticks: { color: 'rgba(200,200,200,0.75)', maxRotation: 0, autoSkip: true }
+        },
+        y: {
+          grid: { color: 'rgba(255,255,255,0.1)' },
+          ticks: {
+            color: 'rgba(200,200,200,0.75)',
+            callback: (valor) => `${valor}%`
+          }
+        }
+      }
+    }
+  });
+}
+
+function montarTabela(eixo, series) {
+  const corpo = document.getElementById('tabela-recente-corpo');
+  if (!corpo) return;
+
+  const ultimos = eixo.map((mes, indice) => ({ mes, indice })).slice(-12).reverse();
+  if (!ultimos.length) {
+    corpo.innerHTML = '<tr><td colspan="5">sem dados coletados</td></tr>';
+    return;
+  }
+
+  const porCodigo = new Map(series.map((item) => [item.codigo_sgs, item]));
+  corpo.innerHTML = ultimos
+    .map(({ mes, indice }) => {
+      const celulas = SERIES_COMPARATIVO.map((definicao) => {
+        const serie = porCodigo.get(definicao.codigo);
+        const valor = serie ? serie.valores[indice] : null;
+        return `<td class="${classeSinal(valor)}">${formatarPercentual(valor)}</td>`;
+      }).join('');
+      return `<tr><td>${formatarMes(mes)}</td>${celulas}</tr>`;
+    })
+    .join('');
+}
+
+async function carregarComparativo() {
+  try {
+    const parametros = new URLSearchParams();
+    const de = inicioDoPeriodo(anosSelecionados);
+    if (de) parametros.set('de', de);
+    parametros.set('series', SERIES_COMPARATIVO.map((item) => item.codigo).join(','));
+
+    const dados = await buscarApi(`/comparacao?${parametros.toString()}`);
+    mostrarAviso('aviso-grafico', '');
+    montarGrafico(dados.eixo, dados.series);
+    montarTabela(dados.eixo, dados.series);
+  } catch (erro) {
+    mostrarAviso('aviso-grafico', `Não foi possível carregar o comparativo: ${erro.message}`);
+  }
+}
+
+/* ------------------------------- calculadora ------------------------------ */
+
+async function corrigirValor(evento) {
+  evento.preventDefault();
+  const corpo = {
+    valor: Number(document.getElementById('calc-valor').value),
+    data_inicial: document.getElementById('calc-inicial').value,
+    data_final: document.getElementById('calc-final').value,
+    indice: document.getElementById('calc-indice').value
+  };
+
+  try {
+    const resultado = await buscarApi('/calculadora/corrigir', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(corpo)
+    });
+
+    mostrarAviso('aviso-calculadora', '');
+    const caixa = document.getElementById('resultado-calculadora');
+    if (caixa) caixa.hidden = false;
+
+    const valor = document.getElementById('resultado-valor');
+    if (valor) valor.textContent = formatarMoeda(resultado.valor_corrigido);
+
+    const detalhe = document.getElementById('resultado-detalhe');
+    if (detalhe) {
+      detalhe.textContent = `${formatarMoeda(resultado.valor_original)} em ${resultado.periodo} `
+        + `→ ${formatarMoeda(resultado.valor_corrigido)} (${resultado.indice}, `
+        + `${resultado.meses} meses, variação de ${formatarPercentual(resultado.variacao_percentual, 4)})`;
+    }
+  } catch (erro) {
+    mostrarAviso('aviso-calculadora', `Não foi possível corrigir: ${erro.message}`);
+  }
+}
+
+/* ---------------------------------- inicio -------------------------------- */
+
+function ligarFiltros() {
+  const filtros = document.getElementById('filtros-periodo');
+  if (!filtros) return;
+
+  filtros.addEventListener('click', (evento) => {
+    const alvo = evento.target.closest('.chip');
+    if (!alvo) return;
+
+    Array.from(filtros.querySelectorAll('.chip')).forEach((chip) => chip.classList.remove('is-ativo'));
+    alvo.classList.add('is-ativo');
+    anosSelecionados = Number(alvo.dataset.anos) || 0;
+    carregarComparativo();
+  });
+}
+
+async function iniciar() {
+  const final = document.getElementById('calc-final');
+  if (final) final.value = new Date().toISOString().slice(0, 10);
+
+  const formulario = document.getElementById('formulario-calculadora');
+  if (formulario) formulario.addEventListener('submit', corrigirValor);
+
+  const botao = document.getElementById('botao-atualizar');
+  if (botao) botao.addEventListener('click', dispararAtualizacao);
+
+  ligarFiltros();
+  await carregarStatus();
+  iniciarRelogio();
+
+  try {
+    await carregarResumo();
+  } catch (erro) {
+    mostrarAviso('aviso-grafico', `Resumo indisponível: ${erro.message}`);
+  }
+
+  await carregarComparativo();
+  setInterval(carregarStatus, RESINCRONIZAR_MS);
+}
+
+document.addEventListener('DOMContentLoaded', iniciar);

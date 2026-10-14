@@ -1,0 +1,31 @@
+#!/bin/sh
+# ------------------------------------------------------------------
+# Gancho pre-commit do projeto — REGRA DE OURO
+# Bloqueia QUALQUER commit que tente incluir .env ou variantes
+# (vale inclusive para `git add -f`). O unico arquivo .env* liberado
+# e o .env.example (modelo, sem segredos).
+# ------------------------------------------------------------------
+
+blocked=$(git diff --cached --name-only --diff-filter=ACM | awk '
+{
+    n = split($0, partes, "/")
+    base = partes[n]
+    if (base ~ /^\.env$/)  { print; next }
+    if (base ~ /^\.env\./ && base != ".env.example") { print }
+}
+')
+
+if [ -n "$blocked" ]; then
+    echo ""
+    echo "BLOQUEADO: arquivo(s) de segredo (.env) nao podem ir para o git." >&2
+    echo "$blocked" | sed 's/^/  -> /' >&2
+    echo "" >&2
+    echo "Como corrigir (escolha o seu caso):" >&2
+    echo "  1) Nunca commitado antes:  git rm --cached <arquivo>" >&2
+    echo "  2) Ja commitado por engano: remova do indice, reescreva o historico" >&2
+    echo "     (git filter-repo) e troque os segredos imediatamente." >&2
+    echo "" >&2
+    exit 1
+fi
+
+exit 0
