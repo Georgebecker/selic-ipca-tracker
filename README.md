@@ -56,7 +56,9 @@ Repositório: `https://github.com/Georgebecker/selic-ipca-tracker` (privado), br
 Tudo vem de APIs públicas do Banco Central, sem chave:
 
 - **SGS (séries temporais)**: `https://api.bcb.gov.br/dados/serie/bcdata.sgs.{codigo}/dados`
-- **Olinda (Focus/expectativas)**: `https://olinda.bcb.gov.br` (opcional, ainda não usado)
+- **Olinda (boletim Focus)**: `https://olinda.bcb.gov.br/olinda/servico/Expectativas/versao/v1/odata`
+  — expectativas de mercado (IPCA e IGP-M para 12 meses, IPCA do ano fechado e Selic por
+  reunião do Copom), usadas no painel "Expectativas do mercado".
 
 | Série | Código SGS | Periodicidade |
 |---|---|---|
@@ -82,6 +84,7 @@ Tudo vem de APIs públicas do Banco Central, sem chave:
 | GET | `/series/{codigo}/ultimos/{n}` | Últimos N valores |
 | GET | `/indicadores/resumo` | KPIs: Selic, IPCA, IGP-M e INPC (atual + 12 meses) |
 | GET | `/comparacao` | Compara índices mês a mês (`?series=433,189`) |
+| GET | `/expectativas` | O que o mercado espera (Focus) x o realizado |
 | POST | `/calculadora/corrigir` | Corrige um valor pela inflação do período |
 | POST | `/atualizar` | Inicia a coleta em segundo plano (HTTP 202) |
 | GET | `/status` | Estado do serviço + progresso da coleta |
@@ -140,9 +143,10 @@ O serviço vive enquanto a janela do `servir.ps1` estiver aberta. O `backup.ps1`
 
 ## Qualidade
 
-- **74 testes** (`python -m pytest -q`) — ETL, coleta (paralelismo, retentativa, falhas),
-  execução em segundo plano, cálculos, API, classificação, responsividade do front-end e
-  consistência entre `sql/schema.sql` e o modelo SQLAlchemy.
+- **108 testes** (`python -m pytest -q`) — ETL, coleta (paralelismo, retentativa, falhas),
+  execução em segundo plano, coleta automática opcional, cálculos, API, expectativas do
+  Focus (com cliente de mentira), classificação, responsividade do front-end, scripts de
+  operação e consistência entre `sql/schema.sql` e o modelo SQLAlchemy.
 - **CI** (`.github/workflows/ci.yml`): a cada push/PR roda os testes em Python 3.12 e 3.13,
   compila os módulos, confere que nenhum arquivo de segredo está versionado e sobe a
   aplicação para checar `/status`, `/series` e `/docs`.
@@ -162,6 +166,9 @@ O serviço vive enquanto a janela do `servir.ps1` estiver aberta. O `backup.ps1`
   `COLETA_AUTOMATICA=true` (e opcionalmente `COLETA_INTERVALO_HORAS`, padrão 24) o
   servidor agenda a coleta sozinho via APScheduler (`src/scheduler/timer.py`).
   `GET /status` informa se está ligada (`coleta_automatica`).
+- O painel de **expectativas (Focus)** depende do Olinda estar no ar: se ele não responder,
+  `/expectativas` devolve `disponivel: false` com o motivo e o resto do painel continua
+  funcionando (a interface mostra o aviso em vez de quebrar).
 - O CDN do Chart.js exige internet para desenhar o gráfico.
 - A coleta roda **em segundo plano**: `POST /atualizar` responde na hora (HTTP 202) e o
   progresso aparece em `GET /status` (`coleta.concluidas` / `coleta.total_series`), que o

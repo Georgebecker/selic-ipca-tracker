@@ -319,6 +319,73 @@ async function carregarComparativo() {
   }
 }
 
+/* ------------------------------ expectativas ------------------------------ */
+
+const LINHAS_EXPECTATIVAS = [
+  { rotulo: 'IPCA 12 meses', chave: 'ipca_12_meses' },
+  { rotulo: 'IGP-M 12 meses', chave: 'igpm_12_meses' },
+  { rotulo: 'IPCA (ano fechado)', chave: 'ipca_anual' },
+  { rotulo: 'Selic', chave: 'selic' }
+];
+
+async function carregarExpectativas() {
+  const corpo = document.getElementById('expectativas-corpo');
+  if (!corpo) return;
+
+  try {
+    const dados = await buscarApi('/expectativas');
+
+    if (!dados.disponivel) {
+      mostrarAviso('aviso-expectativas',
+        `Focus indisponível agora${dados.motivo ? ': ' + dados.motivo : ''}`);
+    } else {
+      mostrarAviso('aviso-expectativas', '');
+    }
+
+    const linhas = LINHAS_EXPECTATIVAS
+      .map(({ rotulo, chave }) => ({ rotulo, item: dados[chave] }))
+      .filter(({ item }) => item && item.mediana !== null && item.mediana !== undefined);
+
+    if (!linhas.length) {
+      corpo.innerHTML = '<tr><td colspan="5">sem expectativas publicadas</td></tr>';
+    } else {
+      corpo.innerHTML = linhas.map(({ rotulo, item }) => `
+        <tr>
+          <td>${rotulo}</td>
+          <td class="${classeSinal(item.mediana)}">${formatarPercentual(item.mediana)}</td>
+          <td>${formatarPercentual(item.minimo)} – ${formatarPercentual(item.maximo)}</td>
+          <td>${item.respondentes !== null && item.respondentes !== undefined ? item.respondentes : '—'}</td>
+          <td>${item.referencia || formatarData(item.data)}</td>
+        </tr>`).join('');
+    }
+
+    const fonte = document.getElementById('expectativas-data');
+    if (fonte) {
+      fonte.textContent = dados.data_referencia
+        ? `boletim de ${formatarData(dados.data_referencia)}`
+        : '';
+    }
+
+    const nota = document.getElementById('expectativas-nota');
+    if (nota) {
+      const esperado = dados.ipca_12_meses ? dados.ipca_12_meses.mediana : null;
+      if (esperado !== null && esperado !== undefined
+          && dados.realizado_ipca_12m !== null && dados.realizado_ipca_12m !== undefined
+          && dados.diferenca_pp !== null && dados.diferenca_pp !== undefined) {
+        nota.textContent = `IPCA 12 meses: mercado espera ${formatarPercentual(esperado)} `
+          + `e o realizado está em ${formatarPercentual(dados.realizado_ipca_12m)} `
+          + `(${formatarData(dados.realizado_data)}) — diferença de `
+          + `${dados.diferenca_pp.toFixed(2)} p.p.`;
+      } else {
+        nota.textContent = 'Sem comparação disponível (falta o esperado ou o realizado).';
+      }
+    }
+  } catch (erro) {
+    mostrarAviso('aviso-expectativas', `Não foi possível carregar as expectativas: ${erro.message}`);
+    corpo.innerHTML = '<tr><td colspan="5">indisponível</td></tr>';
+  }
+}
+
 /* ------------------------------- calculadora ------------------------------ */
 
 async function corrigirValor(evento) {
@@ -391,7 +458,7 @@ async function iniciar() {
     mostrarAviso('aviso-grafico', `Resumo indisponível: ${erro.message}`);
   }
 
-  await carregarComparativo();
+  await Promise.all([carregarComparativo(), carregarExpectativas()]);
 
   // Se uma coleta já estava rodando (outra aba, por exemplo), acompanha desde já.
   if (estado && estado.coleta && estado.coleta.em_andamento) {

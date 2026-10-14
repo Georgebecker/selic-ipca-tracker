@@ -17,7 +17,7 @@ from fastapi.staticfiles import StaticFiles
 
 from src import config
 from src.api import execucao
-from src.api.routers import calculadora, indicadores
+from src.api.routers import calculadora, expectativas, indicadores
 from src.api.schemas import ProgressoColetaOut, StatusOut
 from src.db.repository import (
     abrir_sessao,
@@ -73,6 +73,7 @@ app.add_middleware(
 
 app.include_router(indicadores.router)
 app.include_router(calculadora.router)
+app.include_router(expectativas.router)
 
 
 def _progresso() -> ProgressoColetaOut:

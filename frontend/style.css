@@ -173,6 +173,11 @@ p {
   justify-content: space-between;
 }
 
+.painel__fonte {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
 .filtros {
   display: flex;
   gap: 8px;
