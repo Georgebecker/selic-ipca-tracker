@@ -10,14 +10,15 @@ from __future__ import annotations
 
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
 from src import config
+from src.api import execucao
 from src.api.routers import calculadora, indicadores
-from src.api.schemas import AtualizacaoOut, StatusOut
+from src.api.schemas import ProgressoColetaOut, StatusOut
 from src.db.repository import (
     abrir_sessao,
     listar_series,
@@ -25,7 +26,6 @@ from src.db.repository import (
     semear_series,
     ultima_atualizacao,
 )
-from src.etl.coleta import atualizar_todas
 from src.scheduler.timer import INTERVALO_HORAS, proxima_atualizacao, segundos_restantes
 
 
@@ -43,7 +43,7 @@ app = FastAPI(
     version="0.1.0",
     description=(
         "Indicadores econômicos brasileiros (Selic, IPCA, IGP-M, INPC) coletados "
-        "das APIs do Banco Central, com correção monetária e timer de atualização de 24h."
+        "das APIs do Banco Central, com correção monetária e coleta sob demanda."
     ),
     lifespan=ciclo_de_vida,
 )
@@ -60,7 +60,20 @@ app.include_router(indicadores.router)
 app.include_router(calculadora.router)
 
 
-@app.get("/status", response_model=StatusOut, tags=["atualização"], summary="Status do timer de 24h")
+def _progresso() -> ProgressoColetaOut:
+    estado = execucao.estado()
+    return ProgressoColetaOut(
+        em_andamento=bool(estado.get("em_andamento")),
+        total_series=int(estado.get("total_series") or 0),
+        concluidas=int(estado.get("concluidas") or 0),
+        iniciado_em=estado.get("iniciado_em"),
+        finalizado_em=estado.get("finalizado_em"),
+        status=estado.get("status"),
+        mensagem=estado.get("mensagem"),
+    )
+
+
+@app.get("/status", response_model=StatusOut, tags=["atualização"], summary="Estado do serviço e da coleta")
 def get_status() -> StatusOut:
     with abrir_sessao() as sessao:
         ultima = ultima_atualizacao(sessao)
@@ -71,15 +84,20 @@ def get_status() -> StatusOut:
             segundos_restantes=segundos_restantes(momento, intervalo_horas=INTERVALO_HORAS),
             intervalo_horas=INTERVALO_HORAS,
             series_monitoradas=len(listar_series(sessao)),
+            coleta=_progresso(),
         )
 
 
-@app.post("/atualizar", response_model=AtualizacaoOut, tags=["atualização"], summary="Força a coleta agora")
-def post_atualizar() -> AtualizacaoOut:
-    try:
-        return AtualizacaoOut(**atualizar_todas(tipo="manual"))
-    except Exception as erro:  # noqa: BLE001 - reporta a falha da coleta como 502
-        raise HTTPException(status_code=502, detail="falha ao atualizar: %s" % erro) from erro
+@app.post(
+    "/atualizar",
+    response_model=ProgressoColetaOut,
+    status_code=202,
+    tags=["atualização"],
+    summary="Inicia a coleta em segundo plano (o progresso vem em GET /status)",
+)
+def post_atualizar() -> ProgressoColetaOut:
+    iniciou, _ = execucao.iniciar(tipo="manual")
+    return _progresso()
 
 
 if config.PASTA_FRONTEND.exists():

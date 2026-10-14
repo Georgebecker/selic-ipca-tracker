@@ -105,20 +105,24 @@ class CorrecaoResponse(BaseModel):
     meses: int
 
 
+class ProgressoColetaOut(BaseModel):
+    """Progresso da coleta em segundo plano (alimenta o botão "Atualizar")."""
+
+    em_andamento: bool
+    total_series: int = 0
+    concluidas: int = 0
+    iniciado_em: datetime | None = None
+    finalizado_em: datetime | None = None
+    status: str | None = None
+    mensagem: str | None = None
+
+
 class StatusOut(BaseModel):
-    """Estado do timer de atualização."""
+    """Estado do serviço: última coleta, séries monitoradas e coleta em andamento."""
 
     ultima_atualizacao: datetime | None = None
     proxima_atualizacao: datetime | None = None
     segundos_restantes: int
     intervalo_horas: int
     series_monitoradas: int
-
-
-class AtualizacaoOut(BaseModel):
-    """Resultado de uma coleta disparada pela API."""
-
-    status: str
-    series_atualizadas: int
-    valores_gravados: dict[str, int]
-    falhas: dict[str, str]
+    coleta: ProgressoColetaOut
