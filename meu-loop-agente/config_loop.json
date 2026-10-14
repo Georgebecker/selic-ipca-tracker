@@ -1,0 +1,26 @@
+{
+  "agente": {
+    "modelo": "deepseek-chat",
+    "temperatura": 0.2
+  },
+  "verificacao": {
+    "diretorio_de_trabalho": "..",
+    "comandos": [
+      "python -m pytest -q"
+    ],
+    "parar_no_primeiro_erro": true,
+    "timeout_segundos": 900
+  },
+  "metrica": {
+    "nome": "score_qualidade",
+    "unidade": "score de 0 a 1",
+    "direcao": "maior_melhor",
+    "comando": "python meu-loop-agente/medir_qualidade.py",
+    "regex": "score_qualidade:\\s*([0-9]+(?:[.,][0-9]+)?)",
+    "grupo": 1
+  },
+  "limites": {
+    "max_iteracoes": 20,
+    "rejeicoes_consecutivas": 5
+  }
+}

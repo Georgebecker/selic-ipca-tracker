@@ -1,0 +1,11 @@
+# Dependências do selic-ipca-tracker (versões verificadas no ambiente do projeto).
+fastapi==0.139.2
+uvicorn==0.30.6
+pandas==3.0.3
+sqlalchemy==2.1.4
+requests==2.34.2
+tenacity==9.1.4
+apscheduler==3.11.3
+python-dotenv==1.2.2
+pytest==9.1.1
+httpx==0.28.1

@@ -1,0 +1,37 @@
+# ---- Ambiente e segredos ----
+# .env NUNCA pode ir para o git (regra de ouro): guarda chaves, senhas e caminhos.
+.env
+.env.*
+!.env.example
+.venv/
+venv/
+
+# ---- Dados (nunca versionar dados) ----
+data/raw/*
+data/processed/*
+data/descartados/*
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+!data/descartados/.gitkeep
+*.parquet
+*.jsonl
+*.sqlite
+*.db
+
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ipynb_checkpoints/
+
+# ---- Saídas e logs ----
+saidas/
+logs/
+*.log
+
+# ---- IDE / SO ----
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
