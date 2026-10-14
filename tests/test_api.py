@@ -139,6 +139,7 @@ def test_endpoint_status(api):
     assert corpo["segundos_restantes"] >= 0
     assert "coleta" in corpo, "o /status precisa informar o progresso da coleta"
     assert corpo["coleta"]["em_andamento"] is False
+    assert corpo["coleta_automatica"] is False, "coleta automática é opt-in (env)"
 
 
 def test_atualizar_roda_em_segundo_plano_e_reporta_progresso(api, monkeypatch):

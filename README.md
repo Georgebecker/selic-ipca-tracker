@@ -158,8 +158,10 @@ O serviço vive enquanto a janela do `servir.ps1` estiver aberta. O `backup.ps1`
 - O SGS publica a Selic meta com datas à frente (até a próxima reunião do Copom).
 - A atualização é **manual**: os indicadores são mensais, então o dashboard tem apenas
   o botão "Atualizar" (sem contagem regressiva). `GET /status` informa a última coleta.
-  O agendador do back-end (`src/scheduler/timer.py`, APScheduler) é opcional e não é
-  usado pela interface.
+- Existe **coleta automática opcional**, desligada por padrão: com
+  `COLETA_AUTOMATICA=true` (e opcionalmente `COLETA_INTERVALO_HORAS`, padrão 24) o
+  servidor agenda a coleta sozinho via APScheduler (`src/scheduler/timer.py`).
+  `GET /status` informa se está ligada (`coleta_automatica`).
 - O CDN do Chart.js exige internet para desenhar o gráfico.
 - A coleta roda **em segundo plano**: `POST /atualizar` responde na hora (HTTP 202) e o
   progresso aparece em `GET /status` (`coleta.concluidas` / `coleta.total_series`), que o
