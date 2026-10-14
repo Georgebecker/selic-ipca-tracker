@@ -1,25 +1,27 @@
 {
-  "descricao": "Valores oficiais usados para medir a precisao dos acumulados do projeto. So o humano altera este arquivo.",
+  "descricao": "Regua do Loop do selic-ipca-tracker. So o humano altera este arquivo. O agente nao pode edita-lo: e ele que mede o agente.",
+  "versao": 2,
   "tolerancia_pp": 0.05,
+  "precisao_minima": 0.9,
   "dias_max_para_considerar_recente": 75,
   "min_valores_por_serie": 12,
-  "series_acompanhadas": [
-    { "codigo_sgs": 432, "nome": "Selic meta", "periodicidade": "diaria" },
-    { "codigo_sgs": 4390, "nome": "Selic acumulada no mes", "periodicidade": "mensal" },
-    { "codigo_sgs": 433, "nome": "IPCA mensal", "periodicidade": "mensal" },
-    { "codigo_sgs": 13522, "nome": "IPCA acumulado 12 meses", "periodicidade": "mensal" },
-    { "codigo_sgs": 189, "nome": "IGP-M mensal", "periodicidade": "mensal" },
-    { "codigo_sgs": 188, "nome": "INPC mensal", "periodicidade": "mensal" },
-    { "codigo_sgs": 12, "nome": "CDI diario", "periodicidade": "diaria" },
-    { "codigo_sgs": 1, "nome": "Dolar PTAX venda", "periodicidade": "diaria" },
-    { "codigo_sgs": 7478, "nome": "IPCA-15", "periodicidade": "mensal" },
-    { "codigo_sgs": 192, "nome": "INCC-DI", "periodicidade": "mensal" },
-    { "codigo_sgs": 190, "nome": "IGP-DI", "periodicidade": "mensal" },
-    { "codigo_sgs": 25, "nome": "Poupanca", "periodicidade": "mensal" }
+  "series_alvo": [
+    { "codigo_sgs": 432, "nome": "Selic meta", "periodicidade": "diaria", "inicio_alvo": "2015-01-01" },
+    { "codigo_sgs": 4390, "nome": "Selic acumulada no mes", "periodicidade": "mensal", "inicio_alvo": "2010-01-01" },
+    { "codigo_sgs": 433, "nome": "IPCA mensal", "periodicidade": "mensal", "inicio_alvo": "2010-01-01" },
+    { "codigo_sgs": 13522, "nome": "IPCA acumulado 12 meses", "periodicidade": "mensal", "inicio_alvo": "2010-01-01" },
+    { "codigo_sgs": 189, "nome": "IGP-M mensal", "periodicidade": "mensal", "inicio_alvo": "2010-01-01" },
+    { "codigo_sgs": 188, "nome": "INPC mensal", "periodicidade": "mensal", "inicio_alvo": "2010-01-01" },
+    { "codigo_sgs": 12, "nome": "CDI diario", "periodicidade": "diaria", "inicio_alvo": "2015-01-01" },
+    { "codigo_sgs": 1, "nome": "Dolar PTAX venda", "periodicidade": "diaria", "inicio_alvo": "2015-01-01" },
+    { "codigo_sgs": 7478, "nome": "IPCA-15", "periodicidade": "mensal", "inicio_alvo": "2010-01-01" },
+    { "codigo_sgs": 192, "nome": "INCC-DI", "periodicidade": "mensal", "inicio_alvo": "2010-01-01" },
+    { "codigo_sgs": 190, "nome": "IGP-DI", "periodicidade": "mensal", "inicio_alvo": "2010-01-01" },
+    { "codigo_sgs": 25, "nome": "Poupanca", "periodicidade": "mensal", "inicio_alvo": "2010-01-01" }
   ],
   "validacoes": [
     {
-      "nome": "IPCA acumulado em 2024",
+      "nome": "IPCA acumulado em 2024 contra o valor publicado",
       "tipo": "periodo",
       "codigo_sgs": 433,
       "de": "2024-01-01",
@@ -28,11 +30,39 @@
       "fonte": "BCB - IPCA acumulado 2024 = 4,83% (modelo.md, secao 3.8)"
     },
     {
-      "nome": "IPCA acumulado 12 meses (calculo do projeto x serie oficial 13522)",
+      "nome": "IPCA acumulado 12 meses: nosso calculo x serie oficial 13522",
       "tipo": "acumulado_12m",
       "codigo_sgs": 433,
       "comparar_com": 13522,
-      "fonte": "BCB/SGS 13522 (IPCA acumulado 12 meses)"
+      "fonte": "BCB/SGS 13522"
+    },
+    {
+      "nome": "IPCA acumulado em 2021 x serie oficial 13522 em dezembro",
+      "tipo": "anual_oficial",
+      "codigo_sgs": 433,
+      "ano": 2021,
+      "comparar_com": 13522
+    },
+    {
+      "nome": "IPCA acumulado em 2022 x serie oficial 13522 em dezembro",
+      "tipo": "anual_oficial",
+      "codigo_sgs": 433,
+      "ano": 2022,
+      "comparar_com": 13522
+    },
+    {
+      "nome": "IPCA acumulado em 2023 x serie oficial 13522 em dezembro",
+      "tipo": "anual_oficial",
+      "codigo_sgs": 433,
+      "ano": 2023,
+      "comparar_com": 13522
+    },
+    {
+      "nome": "IPCA acumulado em 2025 x serie oficial 13522 em dezembro",
+      "tipo": "anual_oficial",
+      "codigo_sgs": 433,
+      "ano": 2025,
+      "comparar_com": 13522
     }
   ]
 }
