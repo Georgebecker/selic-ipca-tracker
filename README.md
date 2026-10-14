@@ -78,8 +78,8 @@ Tudo vem de APIs públicas do Banco Central, sem chave:
 | GET | `/indicadores/resumo` | KPIs: Selic, IPCA, IGP-M e INPC (atual + 12 meses) |
 | GET | `/comparacao` | Compara índices mês a mês (`?series=433,189`) |
 | POST | `/calculadora/corrigir` | Corrige um valor pela inflação do período |
-| POST | `/atualizar` | Força a coleta agora |
-| GET | `/status` | Última coleta e séries monitoradas |
+| POST | `/atualizar` | Inicia a coleta em segundo plano (HTTP 202) |
+| GET | `/status` | Estado do serviço + progresso da coleta |
 
 ## Estrutura
 
@@ -122,7 +122,13 @@ python -m pytest -q                                      # verificação obrigat
   O agendador do back-end (`src/scheduler/timer.py`, APScheduler) é opcional e não é
   usado pela interface.
 - O CDN do Chart.js exige internet para desenhar o gráfico.
-- `/atualizar` é síncrono: com 12 séries a coleta leva alguns segundos.
+- A coleta roda **em segundo plano**: `POST /atualizar` responde na hora (HTTP 202) e o
+  progresso aparece em `GET /status` (`coleta.concluidas` / `coleta.total_series`), que o
+  botão do dashboard mostra como "Coletando 3/12…". Uma coleta por vez: a segunda chamada
+  apenas lê o progresso.
+- As séries são baixadas em paralelo (6 threads por padrão, `--workers` para ajustar):
+  medido nesta máquina, a execução quente caiu de ~9 s (sequencial) para ~5 s, e a
+  primeira carga do histórico completo, de 201 s para 73 s.
 
 ## Licença
 

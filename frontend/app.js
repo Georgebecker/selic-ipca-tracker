@@ -70,27 +70,80 @@ function mostrarAviso(id, mensagem) {
 
 /* --------------------------- estado da coleta ----------------------------- */
 
+const INTERVALO_ACOMPANHAR_MS = 1500;
+const LIMITE_ACOMPANHAR_MS = 5 * 60 * 1000;
+
+let acompanhando = false;
+
+function atualizarTextoColeta(estado) {
+  const coleta = estado.coleta || {};
+  const ultima = document.getElementById('ultima-coleta');
+  const rodape = document.getElementById('rodape-status');
+
+  if (ultima) {
+    if (coleta.em_andamento) {
+      ultima.textContent = `coletando ${coleta.concluidas}/${coleta.total_series || '?'}…`;
+    } else if (estado.ultima_atualizacao) {
+      ultima.textContent = `última coleta: ${formatarData(estado.ultima_atualizacao)}`;
+    } else {
+      ultima.textContent = 'sem coleta registrada';
+    }
+  }
+
+  if (rodape) {
+    const base = estado.ultima_atualizacao
+      ? `Fonte: BCB/SGS. Última coleta: ${formatarData(estado.ultima_atualizacao)}. `
+        + `${estado.series_monitoradas} séries monitoradas (dados mensais).`
+      : 'Fonte: BCB/SGS. Nenhuma coleta registrada — use o botão "Atualizar".';
+    const sufixo = coleta.em_andamento ? ' Coleta em andamento.' : '';
+    rodape.textContent = base + sufixo;
+  }
+}
+
 async function carregarStatus() {
   try {
     const estado = await buscarApi('/status');
-
-    const ultima = document.getElementById('ultima-coleta');
-    if (ultima) {
-      ultima.textContent = estado.ultima_atualizacao
-        ? `última coleta: ${formatarData(estado.ultima_atualizacao)}`
-        : 'sem coleta registrada';
-    }
-
-    const rodape = document.getElementById('rodape-status');
-    if (rodape) {
-      rodape.textContent = estado.ultima_atualizacao
-        ? `Fonte: BCB/SGS. Última coleta: ${formatarData(estado.ultima_atualizacao)}. `
-          + `${estado.series_monitoradas} séries monitoradas (dados mensais).`
-        : 'Fonte: BCB/SGS. Nenhuma coleta registrada — use o botão "Atualizar".';
-    }
+    atualizarTextoColeta(estado);
+    return estado;
   } catch (erro) {
     const ultima = document.getElementById('ultima-coleta');
     if (ultima) ultima.textContent = `status indisponível (${erro.message})`;
+    return null;
+  }
+}
+
+async function acompanharColeta() {
+  if (acompanhando) return true;
+  acompanhando = true;
+
+  const botao = document.getElementById('botao-atualizar');
+  const limite = Date.now() + LIMITE_ACOMPANHAR_MS;
+
+  try {
+    while (Date.now() < limite) {
+      const estado = await buscarApi('/status');
+      const coleta = estado.coleta || {};
+      atualizarTextoColeta(estado);
+
+      if (!coleta.em_andamento) {
+        if (coleta.status && coleta.status !== 'sucesso') {
+          mostrarAviso('aviso-grafico',
+            `Coleta ${coleta.status}${coleta.mensagem ? ': ' + coleta.mensagem : ''}`);
+        } else {
+          mostrarAviso('aviso-grafico', '');
+        }
+        return true;
+      }
+
+      if (botao) botao.textContent = `Coletando ${coleta.concluidas}/${coleta.total_series || '?'}…`;
+      await new Promise((resolver) => setTimeout(resolver, INTERVALO_ACOMPANHAR_MS));
+    }
+    return false;
+  } catch (erro) {
+    mostrarAviso('aviso-grafico', `Perdi o contato durante a coleta: ${erro.message}`);
+    return false;
+  } finally {
+    acompanhando = false;
   }
 }
 
@@ -98,13 +151,15 @@ async function dispararAtualizacao() {
   const botao = document.getElementById('botao-atualizar');
   if (botao) {
     botao.disabled = true;
-    botao.textContent = 'Atualizando…';
+    botao.textContent = 'Iniciando…';
   }
 
   try {
-    const resultado = await buscarApi('/atualizar', { method: 'POST' });
-    if (resultado.status !== 'sucesso') {
-      mostrarAviso('aviso-grafico', `Coleta ${resultado.status}. Falhas: ${JSON.stringify(resultado.falhas)}`);
+    await buscarApi('/atualizar', { method: 'POST' });
+    const terminou = await acompanharColeta();
+    if (!terminou && botao) {
+      mostrarAviso('aviso-grafico',
+        'A coleta segue rodando no servidor; o resultado aparece no topo da página.');
     }
     await Promise.all([carregarResumo(), carregarComparativo(), carregarStatus()]);
   } catch (erro) {
@@ -319,7 +374,7 @@ async function iniciar() {
   if (botao) botao.addEventListener('click', dispararAtualizacao);
 
   ligarFiltros();
-  await carregarStatus();
+  const estado = await carregarStatus();
 
   try {
     await carregarResumo();
@@ -328,6 +383,14 @@ async function iniciar() {
   }
 
   await carregarComparativo();
+
+  // Se uma coleta já estava rodando (outra aba, por exemplo), acompanha desde já.
+  if (estado && estado.coleta && estado.coleta.em_andamento) {
+    const botao = document.getElementById('botao-atualizar');
+    if (botao) botao.disabled = true;
+    acompanharColeta().then(() => Promise.all([carregarResumo(), carregarComparativo(), carregarStatus()]))
+      .finally(() => { if (botao) { botao.disabled = false; botao.textContent = 'Atualizar'; } });
+  }
 }
 
 document.addEventListener('DOMContentLoaded', iniciar);
