@@ -280,6 +280,11 @@ p {
 .tabela th:first-child,
 .tabela td:first-child {
   text-align: left;
+  /* Primeira coluna fixa: no celular a tabela rola, mas o mês continua visível. */
+  position: sticky;
+  left: 0;
+  background: var(--surface-2);
+  z-index: 1;
 }
 
 .tabela th {
@@ -306,6 +311,13 @@ p {
   margin-top: 12px;
   font-size: 0.85rem;
   color: var(--danger);
+}
+
+.nota {
+  margin-top: 12px;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
 }
 
 .rodape {
