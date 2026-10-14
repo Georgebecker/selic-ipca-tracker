@@ -117,6 +117,27 @@ python meu-loop-agente/medir_qualidade.py --detalhe      # métrica score_qualid
 python -m pytest -q                                      # verificação obrigatória
 ```
 
+## Operação
+
+Três scripts em `scripts/` para o dia a dia (nenhum deles guarda segredo):
+
+```powershell
+# subir a API + dashboard (Ctrl+C encerra)
+powershell -ExecutionPolicy Bypass -File scripts\servir.ps1
+powershell -ExecutionPolicy Bypass -File scripts\servir.ps1 -Porta 8080 -Recarregar -AbrirNavegador
+
+# atualizar os dados (paralelo, com retentativa automática das séries que falharem)
+powershell -ExecutionPolicy Bypass -File scripts\coletar.ps1
+powershell -ExecutionPolicy Bypass -File scripts\coletar.ps1 -Series 433,189 -Workers 10
+
+# backup do banco (data no nome, verificação de que o arquivo abre e retenção dos 10 últimos)
+powershell -ExecutionPolicy Bypass -File scripts\backup.ps1
+powershell -ExecutionPolicy Bypass -File scripts\backup.ps1 -Listar
+```
+
+O serviço vive enquanto a janela do `servir.ps1` estiver aberta. O `backup.ps1` grava em
+`data/backups/` (fora do git) e apaga os mais antigos conforme `-Manter`.
+
 ## Qualidade
 
 - **74 testes** (`python -m pytest -q`) — ETL, coleta (paralelismo, retentativa, falhas),
