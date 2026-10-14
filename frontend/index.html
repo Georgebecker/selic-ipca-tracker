@@ -61,7 +61,8 @@
         </div>
       </div>
       <div class="grafico">
-        <canvas id="grafico-indices" height="120"></canvas>
+        <canvas id="grafico-indices" height="120" role="img"
+                aria-label="Gráfico comparativo dos índices; os valores estão na tabela de últimos 12 meses e na API"></canvas>
       </div>
       <p class="aviso" id="aviso-grafico" hidden></p>
     </section>
@@ -118,6 +119,10 @@
             </tbody>
           </table>
         </div>
+        <p class="nota">
+          O mês corrente aparece parcial: cada instituto publica o índice do mês
+          ao longo do mês seguinte, então nem toda série tem valor no último mês.
+        </p>
       </article>
     </section>
   </main>

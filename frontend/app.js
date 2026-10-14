@@ -210,6 +210,15 @@ function montarGrafico(eixo, series) {
   const contexto = document.getElementById('grafico-indices');
   if (!contexto || typeof Chart === 'undefined') return;
 
+  // Leitor de tela: descreve o gráfico em texto (o canvas sozinho não diz nada).
+  if (eixo.length && series.length) {
+    const nomes = series.map((item) => item.nome).join(', ');
+    contexto.setAttribute('aria-label',
+      `Gráfico comparativo de ${nomes}, de ${formatarMes(eixo[0])} a `
+      + `${formatarMes(eixo[eixo.length - 1])} (${eixo.length} meses). `
+      + 'Os valores numéricos estão na tabela de últimos 12 meses.');
+  }
+
   const conjuntos = SERIES_COMPARATIVO.map((definicao) => {
     const serie = series.find((item) => item.codigo_sgs === definicao.codigo);
     return {

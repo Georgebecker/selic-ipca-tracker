@@ -115,6 +115,21 @@ def test_endpoint_comparacao_alinha_os_meses(api):
     assert corpo["series"][0]["valores"][0] == 0.42
 
 
+def test_frontend_servido_pela_api(api):
+    pagina = api.get("/app/")
+    assert pagina.status_code == 200
+    assert "selic-ipca-tracker" in pagina.text
+    assert 'id="timer"' not in pagina.text, "o relógio de 24h não deve voltar"
+
+    estilo = api.get("/app/style.css")
+    assert estilo.status_code == 200
+    assert "min-width: 0" in estilo.text
+
+    script = api.get("/app/app.js")
+    assert script.status_code == 200
+    assert "acompanharColeta" in script.text
+
+
 def test_endpoint_status(api):
     r = api.get("/status")
     assert r.status_code == 200

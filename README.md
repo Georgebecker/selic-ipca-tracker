@@ -119,8 +119,9 @@ python -m pytest -q                                      # verificação obrigat
 
 ## Qualidade
 
-- **57 testes** (`python -m pytest -q`) — ETL, coleta (paralelismo, retentativa, falhas),
-  execução em segundo plano, cálculos, API, classificação e responsividade.
+- **74 testes** (`python -m pytest -q`) — ETL, coleta (paralelismo, retentativa, falhas),
+  execução em segundo plano, cálculos, API, classificação, responsividade do front-end e
+  consistência entre `sql/schema.sql` e o modelo SQLAlchemy.
 - **CI** (`.github/workflows/ci.yml`): a cada push/PR roda os testes em Python 3.12 e 3.13,
   compila os módulos, confere que nenhum arquivo de segredo está versionado e sobe a
   aplicação para checar `/status`, `/series` e `/docs`.
