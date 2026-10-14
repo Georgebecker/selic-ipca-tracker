@@ -69,11 +69,25 @@ def _requisitar(url: str, parametros: dict | None = None) -> list[dict]:
     resposta.encoding = "utf-8"  # a API não informa o charset corretamente
     resposta.raise_for_status()
 
-    dados = resposta.json()
+    corpo = (resposta.text or "").strip()
+    if not corpo:
+        # O SGS às vezes devolve 200 com corpo vazio (falha transitória). Erro explícito
+        # para o retry agir — devolver [] aqui esconderia dado que existe na janela.
+        raise ValueError(
+            "resposta vazia da API SGS (HTTP %s) para %s" % (resposta.status_code, url)
+        )
+
+    try:
+        dados = resposta.json()
+    except ValueError as erro:
+        raise ValueError(
+            "resposta da API SGS nao e JSON (HTTP %s): %s"
+            % (resposta.status_code, corpo[:200])
+        ) from erro
+
     if not isinstance(dados, list):
         raise ValueError("resposta inesperada da API SGS: " + str(type(dados)))
     return dados
-
 
 @retry(
     stop=stop_after_attempt(3),

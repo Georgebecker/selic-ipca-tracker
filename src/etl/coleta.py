@@ -31,11 +31,12 @@ from src.etl.bcb_sgs import buscar_serie
 from src.etl.limpeza import limpar_serie, registros_para_banco
 
 # A API do BCB recusa janelas maiores que 10 anos em séries diárias (o cliente
-# divide em janelas de 9 anos). Aqui fica só a profundidade do histórico coletado:
-# mensais desde 2010 e diárias desde 2015, conforme o `inicio_alvo` de cada série
-# em meu-loop-agente/referencias_oficiais.json.
-INICIO_MENSAL = date(2010, 1, 1)
-INICIO_DIARIO = date(2015, 1, 1)
+# divide em janelas de 9 anos). Aqui fica só a profundidade do histórico coletado,
+# conforme o `inicio_alvo` de cada série em
+# meu-loop-agente/referencias_oficiais.json: mensais desde 2005 e diárias desde 2010
+# (20 anos de série mensal). Disponibilidade conferida no SGS antes de aprofundar.
+INICIO_MENSAL = date(2005, 1, 1)
+INICIO_DIARIO = date(2010, 1, 1)
 
 # 6 threads: medido nesta maquina (12 series, historico completo) — sequencial ~9 s,
 # 6 threads ~5 s em execucao quente; a primeira carga do historico caiu de 201 s para
@@ -106,8 +107,14 @@ def atualizar_todas(
     codigos: list[int] | None = None,
     workers: int = WORKERS_PADRAO,
     avisar: Callable[[str], None] | None = None,
+    tentativas_extras: int = 1,
 ) -> dict:
-    """Coleta as séries pedidas (ou todas) e registra o resultado em `atualizacoes`."""
+    """Coleta as séries pedidas (ou todas) e registra o resultado em `atualizacoes`.
+
+    Quem falhar na primeira passada é tentado de novo (a API do BCB devolve resposta
+    vazia de vez em quando); a segunda tentativa vai com menos threads para não insistir
+    em rajada.
+    """
     with abrir_sessao() as sessao:
         semear_series(sessao)
         series = listar_series(sessao)
@@ -117,6 +124,21 @@ def atualizar_todas(
 
         hoje = date.today()
         quadros, falhas = _baixar_em_paralelo(series, hoje, workers, avisar)
+
+        for tentativa in range(tentativas_extras):
+            if not falhas:
+                break
+            pendentes = [item for item in series if str(item.codigo_sgs) in falhas]
+            if avisar:
+                avisar(
+                    "retentando %d série(s) que falharam (tentativa %d)"
+                    % (len(pendentes), tentativa + 2)
+                )
+            quadros_novos, falhas_restantes = _baixar_em_paralelo(
+                pendentes, hoje, max(1, workers // 2), avisar
+            )
+            quadros.update(quadros_novos)
+            falhas = falhas_restantes
 
         # Gravação sequencial: um escritor só, na ordem das séries.
         gravados: dict[str, int] = {}
@@ -161,6 +183,10 @@ def main() -> int:
         "--workers", type=int, default=WORKERS_PADRAO,
         help="quantas séries baixar em paralelo (padrão: %d)" % WORKERS_PADRAO,
     )
+    analisador.add_argument(
+        "--tentativas-extras", type=int, default=1,
+        help="quantas vezes retentar as séries que falharam (padrão: 1)",
+    )
     argumentos = analisador.parse_args()
 
     codigos = (
@@ -172,6 +198,7 @@ def main() -> int:
     resultado = atualizar_todas(
         tipo="manual", codigos=codigos, workers=argumentos.workers,
         avisar=lambda texto: print("   " + texto),
+        tentativas_extras=argumentos.tentativas_extras,
     )
     print("status: " + resultado["status"])
     print("séries atualizadas: %d" % resultado["series_atualizadas"])

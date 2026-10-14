@@ -153,6 +153,55 @@ def test_atualizar_todas_nao_depende_da_ordem_de_chegada(sem_rede, sem_escrita):
     assert set(resultado["valores_gravados"]) == {"1", "12", "25"}
 
 
+def test_retentativa_recupera_serie_que_falhou(monkeypatch, sem_escrita):
+    """A API do BCB devolve resposta vazia de vez em quando: a segunda passada resolve."""
+    tentativas = {"serie_teste": 0}
+
+    def buscar_instavel(codigo, data_inicial, data_final):
+        if int(codigo) == SERIE_TESTE:
+            tentativas["serie_teste"] += 1
+            if tentativas["serie_teste"] == 1:
+                raise ValueError("resposta vazia da API SGS (HTTP 200)")
+        return _registros_sinteticos(quantidade=5)
+
+    monkeypatch.setattr(coleta, "buscar_serie", buscar_instavel)
+    resultado = coleta.atualizar_todas(codigos=[SERIE_TESTE, 433], workers=2)
+
+    assert resultado["status"] == "sucesso", "a retentativa deveria recuperar a série"
+    assert resultado["falhas"] == {}
+    assert tentativas["serie_teste"] == 2
+    assert resultado["series_atualizadas"] == 2
+
+
+def test_sem_retentativa_a_falha_e_reportada(monkeypatch, sem_escrita):
+    def buscar_sempre_falha(codigo, data_inicial, data_final):
+        if int(codigo) == SERIE_TESTE:
+            raise ValueError("resposta vazia da API SGS (HTTP 200)")
+        return _registros_sinteticos(quantidade=5)
+
+    monkeypatch.setattr(coleta, "buscar_serie", buscar_sempre_falha)
+    resultado = coleta.atualizar_todas(
+        codigos=[SERIE_TESTE, 433], workers=2, tentativas_extras=0
+    )
+
+    assert resultado["status"] == "parcial"
+    assert str(SERIE_TESTE) in resultado["falhas"]
+    assert resultado["series_atualizadas"] == 1
+
+
+def test_retentativa_avisa_no_progresso(monkeypatch, sem_escrita):
+    def buscar_instavel(codigo, data_inicial, data_final):
+        if int(codigo) == SERIE_TESTE:
+            raise ValueError("resposta vazia da API SGS (HTTP 200)")
+        return _registros_sinteticos(quantidade=5)
+
+    monkeypatch.setattr(coleta, "buscar_serie", buscar_instavel)
+    mensagens: list[str] = []
+    coleta.atualizar_todas(codigos=[SERIE_TESTE, 433], workers=2, avisar=mensagens.append)
+
+    assert any("retentando" in texto for texto in mensagens)
+
+
 def test_gravacao_continua_idempotente():
     """Guarda contra regressão: a gravação segue sendo upsert (INSERT ... ON CONFLICT)."""
     assert "sqlite_insert" in inspect.getsource(salvar_valores)

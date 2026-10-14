@@ -36,3 +36,14 @@
 - **Decisão**: ACEITO
 - **Data/hora**: 2026-10-14T19:34:56Z
 
+
+## Iteração 1
+- **Hipótese**: Aprofundar o historico coletado: mensais desde 2005 e diarias desde 2010 (INICIO_MENSAL/INICIO_DIARIO), somado a retentativa das series que o BCB responde vazio
+- **Arquivos alterados**: src/etl/coleta.py, src/etl/bcb_sgs.py
+- **Métrica antes**: 0.5 score de 0 a 1
+- **Métrica depois**: 1 score de 0 a 1
+- **Melhoria**: 100.00%
+- **Comandos passaram**: Sim
+- **Decisão**: ACEITO
+- **Data/hora**: 2026-10-14T20:50:29Z
+
