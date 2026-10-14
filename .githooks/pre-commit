@@ -1,12 +1,26 @@
 #!/bin/sh
 # ------------------------------------------------------------------
-# Gancho pre-commit do projeto — REGRA DE OURO
-# Bloqueia QUALQUER commit que tente incluir .env ou variantes
-# (vale inclusive para `git add -f`). O unico arquivo .env* liberado
-# e o .env.example (modelo, sem segredos).
+# Gancho pre-commit — REGRA DE OURO (seguranca maxima)
+#
+# Bloqueia o commit quando:
+#   1) algum arquivo de segredo (.env ou variante) entra no commit,
+#      valendo inclusive para `git add -f`; o unico liberado e o
+#      .env.example (modelo, sem valores);
+#   2) alguma LINHA ADICIONADA contem valor com cara de chave
+#      (DeepSeek/OpenAI, Google, Hugging Face, GitHub, AWS ou chave
+#      privada). Chave nao mora em arquivo: mora na variavel de
+#      ambiente do usuario do Windows.
+#
+# A mensagem mostra apenas o NOME DO ARQUIVO suspeito — nunca o valor.
+#
+# Template: %USERPROFILE%\.copilot\templates\githooks\
 # ------------------------------------------------------------------
 
-blocked=$(git diff --cached --name-only --diff-filter=ACM | awk '
+PADRAO='sk-[A-Za-z0-9]{24,}|sk-proj-[A-Za-z0-9_-]{20,}|AIza[0-9A-Za-z_-]{33,}|hf_[A-Za-z0-9]{30,}|ghp_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{30,}|AKIA[0-9A-Z]{16}|-----BEGIN [A-Z ]*PRIVATE KEY-----|(DEEPSEEK|OPENAI|ANTHROPIC|GOOGLE|GEMINI|HUGGINGFACE|HF|PEXELS|SERPAPI|STRIPE)[A-Z0-9_]*(API_?KEY|TOKEN|SECRET|PASSWORD)[A-Z0-9_]*[ \t]*[:=][^A-Za-z0-9]{0,3}[A-Za-z0-9_-]{16,}'
+EXCECOES='example|exemplo|placeholder|sua_chave|sua-chave|changeme|seu_token|xxx'
+
+# ---- barreira 1: arquivo de segredo (.env e variantes) ----
+arquivos_segredo=$(git diff --cached --name-only --diff-filter=ACM | awk '
 {
     n = split($0, partes, "/")
     base = partes[n]
@@ -15,15 +29,46 @@ blocked=$(git diff --cached --name-only --diff-filter=ACM | awk '
 }
 ')
 
-if [ -n "$blocked" ]; then
-    echo ""
+if [ -n "$arquivos_segredo" ]; then
+    echo "" >&2
     echo "BLOQUEADO: arquivo(s) de segredo (.env) nao podem ir para o git." >&2
-    echo "$blocked" | sed 's/^/  -> /' >&2
+    echo "$arquivos_segredo" | sed 's/^/  -> /' >&2
     echo "" >&2
     echo "Como corrigir (escolha o seu caso):" >&2
     echo "  1) Nunca commitado antes:  git rm --cached <arquivo>" >&2
     echo "  2) Ja commitado por engano: remova do indice, reescreva o historico" >&2
-    echo "     (git filter-repo) e troque os segredos imediatamente." >&2
+    echo "     e revogue as chaves na origem imediatamente." >&2
+    echo "" >&2
+    echo "Lembrete: o valor da chave fica na variavel de ambiente do usuario." >&2
+    echo "  segredos.ps1 -Definir DEEPSEEK_API_KEY" >&2
+    echo "" >&2
+    exit 1
+fi
+
+# ---- barreira 2: valor de chave nas linhas adicionadas ----
+# Reporta somente o nome do arquivo (nunca o valor encontrado).
+suspeitos=$(git diff --cached -U0 --diff-filter=ACM 2>/dev/null \
+    | awk -v re="$PADRAO" -v ex="$EXCECOES" '
+        /^\+\+\+ / { arquivo = substr($0, 7); sub(/^b\//, "", arquivo); next }
+        /^\+\+\+/  { next }
+        /^\+/ {
+            if (arquivo ~ /(\.lock|package-lock\.json|pnpm-lock\.yaml|yarn\.lock|poetry\.lock|\.min\.js)$/) next
+            linha = substr($0, 2)
+            if (linha ~ re && tolower(linha) !~ ex) { print arquivo }
+        }' | sort -u)
+
+if [ -n "$suspeitos" ]; then
+    echo "" >&2
+    echo "BLOQUEADO: arquivo(s) com valor de CHAVE/SEGREDO no commit." >&2
+    echo "$suspeitos" | sed 's/^/  -> /' >&2
+    echo "" >&2
+    echo "REGRA DE OURO: nenhum arquivo guarda valor de chave (DeepSeek, OpenAI," >&2
+    echo "Google, Hugging Face, token, senha, DSN ou chave privada)." >&2
+    echo "Tire o valor do arquivo e deixe so a variavel de ambiente do usuario:" >&2
+    echo "  segredos.ps1 -Definir NOME_DA_CHAVE" >&2
+    echo "" >&2
+    echo "Se for falso positivo (exemplo em documentacao ou teste), ajuste a linha" >&2
+    echo "para nao parecer chave real. Chave exposta e chave queimada: revogue na origem." >&2
     echo "" >&2
     exit 1
 fi

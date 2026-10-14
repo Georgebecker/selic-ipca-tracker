@@ -1,12 +1,20 @@
 #!/bin/sh
 # ------------------------------------------------------------------
-# Gancho pre-push do projeto — REGRA DE OURO
-# Bloqueia QUALQUER push de commits que contenham .env ou variantes
-# (o unico arquivo liberado e o .env.example, modelo sem segredos).
-# E a SEGUNDA barreira, depois do pre-commit: protege o envio ao
-# repositorio remoto mesmo que um commit tenha passado com --no-verify.
-# Regra do usuario (11/09/2026): o .env NUNCA pode ser enviado.
+# Gancho pre-push — REGRA DE OURO (seguranca maxima)
+#
+# SEGUNDA barreira, depois do pre-commit: recusa o ENVIO ao remoto
+# quando algum commit da fila contem arquivo de segredo (.env ou
+# variante) OU linha com valor de chave (DeepSeek/OpenAI, Google,
+# Hugging Face, GitHub, AWS, chave privada).
+#
+# Pega ate o commit criado com --no-verify, que burlou a primeira barreira.
+# A mensagem mostra apenas o commmit e o NOME DO ARQUIVO — nunca o valor.
+#
+# Template: %USERPROFILE%\.copilot\templates\githooks\
 # ------------------------------------------------------------------
+
+PADRAO='sk-[A-Za-z0-9]{24,}|sk-proj-[A-Za-z0-9_-]{20,}|AIza[0-9A-Za-z_-]{33,}|hf_[A-Za-z0-9]{30,}|ghp_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{30,}|AKIA[0-9A-Z]{16}|-----BEGIN [A-Z ]*PRIVATE KEY-----|(DEEPSEEK|OPENAI|ANTHROPIC|GOOGLE|GEMINI|HUGGINGFACE|HF|PEXELS|SERPAPI|STRIPE)[A-Z0-9_]*(API_?KEY|TOKEN|SECRET|PASSWORD)[A-Z0-9_]*[ \t]*[:=][^A-Za-z0-9]{0,3}[A-Za-z0-9_-]{16,}'
+EXCECOES='example|exemplo|placeholder|sua_chave|sua-chave|changeme|seu_token|xxx'
 
 while read -r local_ref local_sha remote_ref remote_sha
 do
@@ -25,19 +33,44 @@ do
 
     for commit in $commits
     do
+        # ---- barreira 1: arquivo de segredo no commit ----
         # --root inclui o primeiro commit do repositorio (que nao tem pai)
-        suspeitos=$(git diff-tree --root --no-commit-id --name-only -r "$commit" 2>/dev/null \
+        arquivos=$(git diff-tree --root --no-commit-id --name-only -r "$commit" 2>/dev/null \
             | grep -E '(^|/)\.env($|\.)' \
             | grep -vE '(^|/)\.env\.example$')
 
-        if [ -n "$suspeitos" ]; then
+        if [ -n "$arquivos" ]; then
             echo "" >&2
             echo "BLOQUEADO: o push contem arquivo(s) de segredo (.env)." >&2
             echo "  commit $commit:" >&2
-            echo "$suspeitos" | sed 's/^/  -> /' >&2
+            echo "$arquivos" | sed 's/^/  -> /' >&2
             echo "" >&2
             echo "REGRA DE OURO: o .env NUNCA vai para o repositorio remoto." >&2
             echo "Remova o arquivo do commit e reescreva o historico antes de tentar de novo." >&2
+            echo "" >&2
+            exit 1
+        fi
+
+        # ---- barreira 2: valor de chave nas linhas adicionadas ----
+        valores=$(git show --format= --unified=0 --no-color "$commit" 2>/dev/null \
+            | awk -v re="$PADRAO" -v ex="$EXCECOES" '
+                /^\+\+\+ / { arquivo = substr($0, 7); sub(/^b\//, "", arquivo); next }
+                /^\+\+\+/  { next }
+                /^\+/ {
+                    if (arquivo ~ /(\.lock|package-lock\.json|pnpm-lock\.yaml|yarn\.lock|poetry\.lock|\.min\.js)$/) next
+                    linha = substr($0, 2)
+                    if (linha ~ re && tolower(linha) !~ ex) { print arquivo }
+                }' | sort -u)
+
+        if [ -n "$valores" ]; then
+            echo "" >&2
+            echo "BLOQUEADO: o push contem commit com valor de CHAVE/SEGREDO." >&2
+            echo "  commit $commit" >&2
+            echo "$valores" | sed 's/^/  -> /' >&2
+            echo "" >&2
+            echo "REGRA DE OURO: nenhum arquivo guarda valor de chave." >&2
+            echo "Mova o valor para a variavel de ambiente do usuario (segredos.ps1 -Definir NOME)," >&2
+            echo "reescreva o historico do commit e REVOQUE a chave na origem." >&2
             echo "" >&2
             exit 1
         fi
