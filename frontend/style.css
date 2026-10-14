@@ -93,29 +93,10 @@ p {
   flex-wrap: wrap;
 }
 
-.timer {
-  display: grid;
-  gap: 2px;
-  text-align: right;
-  padding: 8px 14px;
-  border-radius: 12px;
-  background: var(--surface-2);
-  border: 1px solid var(--borda);
-}
-
-.timer__rotulo,
-.timer__nota {
-  font-size: 0.72rem;
+.topo__ultima {
+  font-size: 0.78rem;
   color: var(--text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.timer__valor {
-  font-variant-numeric: tabular-nums;
-  font-size: 1.4rem;
-  font-weight: 600;
-  color: var(--accent-2);
+  white-space: nowrap;
 }
 
 .botao {
@@ -128,6 +109,12 @@ p {
   background: linear-gradient(135deg, var(--accent), var(--accent-2));
   cursor: pointer;
   transition: filter 0.2s, transform 0.2s;
+}
+
+.botao--pequeno {
+  padding: 7px 14px;
+  border-radius: 10px;
+  font-size: 0.82rem;
 }
 
 .botao:hover {
@@ -146,7 +133,7 @@ p {
 /* ---------- KPIs ---------- */
 .kpis {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(210px, 100%), 1fr));
   gap: 16px;
   margin-bottom: 24px;
 }
@@ -214,14 +201,14 @@ p {
 
 .grade {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr));
   gap: 24px;
 }
 
 /* ---------- formulario ---------- */
 .formulario {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(170px, 100%), 1fr));
   gap: 12px;
   align-items: end;
 }
@@ -229,14 +216,19 @@ p {
 .formulario label {
   display: grid;
   gap: 6px;
-  font-size: 0.78rem;
+  min-width: 0;
+  font-size: 0.72rem;
+  line-height: 1.2;
   color: var(--text-secondary);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.03em;
+  overflow-wrap: anywhere;
 }
 
 .formulario input,
 .formulario select {
+  width: 100%;
+  min-width: 0;
   padding: 10px 12px;
   border-radius: 10px;
   border: 1px solid var(--borda);
@@ -323,13 +315,22 @@ p {
   text-align: center;
 }
 
-@media (max-width: 560px) {
-  .timer {
-    text-align: left;
-  }
-
+@media (max-width: 520px) {
   .topo__acoes {
     width: 100%;
     justify-content: space-between;
+  }
+
+  /* Uma coluna so: os campos ficam confortaveis e nada se sobrepoe. */
+  .formulario {
+    grid-template-columns: 1fr;
+  }
+
+  .formulario button {
+    width: 100%;
+  }
+
+  .card {
+    padding: 16px;
   }
 }

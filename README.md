@@ -6,7 +6,7 @@
 |----------|-------|
 | **Propósito** | `estudo` · `utilidade` |
 | **Maturidade** | `usável` |
-| **O que estou treinando** | séries temporais, composição de taxas, timer 24h, banco SQLite |
+| **O que estou treinando** | séries temporais, composição de taxas, banco SQLite, layout responsivo |
 | **Quem usaria** | devs iniciantes, curiosos sobre inflação e juros no Brasil |
 
 > Nota de honestidade (regras R-CL1, R-CL2 e R-CL5 do `modelo.md`): a maturidade é
@@ -17,9 +17,9 @@
 > reavaliada a cada ciclo do Loop de melhoria contínua (§1.1.5 do `modelo.md`).
 
 Acompanhamento de indicadores econômicos brasileiros (Selic, IPCA, IGP-M e INPC)
-com coleta automática no Banco Central, banco SQLite, API REST documentada e
-dashboard web (dark mode, gráficos comparativos, calculadora de correção monetária
-e timer regressivo de 24 horas).
+com coleta no Banco Central, banco SQLite, API REST documentada e dashboard web
+responsivo (dark mode, gráficos comparativos, calculadora de correção monetária e
+atualização sob demanda por botão — os dados são mensais, não há contagem regressiva).
 
 ## Como rodar
 
@@ -78,8 +78,8 @@ Tudo vem de APIs públicas do Banco Central, sem chave:
 | GET | `/indicadores/resumo` | KPIs: Selic, IPCA, IGP-M e INPC (atual + 12 meses) |
 | GET | `/comparacao` | Compara índices mês a mês (`?series=433,189`) |
 | POST | `/calculadora/corrigir` | Corrige um valor pela inflação do período |
-| POST | `/atualizar` | Força a coleta agora e reseta o timer |
-| GET | `/status` | Estado do timer e da última atualização |
+| POST | `/atualizar` | Força a coleta agora |
+| GET | `/status` | Última coleta e séries monitoradas |
 
 ## Estrutura
 
@@ -91,7 +91,7 @@ selic-ipca-tracker/
 │   ├── db/                   # models.py (SQLAlchemy), repository.py
 │   ├── analise/              # calculos.py, comparacao.py
 │   ├── api/                  # main.py, schemas.py, routers/
-│   └── scheduler/timer.py    # regra das 24 horas
+│   └── scheduler/timer.py    # agendador opcional (APScheduler)
 ├── frontend/                 # index.html, style.css, app.js (Chart.js)
 ├── tests/                    # test_etl, test_calculos, test_api, test_classificacao
 ├── sql/schema.sql            # esquema do banco (referência)
@@ -117,8 +117,10 @@ python -m pytest -q                                      # verificação obrigat
 - A API do SGS recusa janelas maiores que 10 anos em séries diárias e exige
   `dataInicial` e `dataFinal` juntos; o cliente divide o período em janelas de 9 anos.
 - O SGS publica a Selic meta com datas à frente (até a próxima reunião do Copom).
-- O timer regressivo de 24h roda no navegador e é resincronizado por `GET /status`;
-  o agendador do back-end (APScheduler) é opcional.
+- A atualização é **manual**: os indicadores são mensais, então o dashboard tem apenas
+  o botão "Atualizar" (sem contagem regressiva). `GET /status` informa a última coleta.
+  O agendador do back-end (`src/scheduler/timer.py`, APScheduler) é opcional e não é
+  usado pela interface.
 - O CDN do Chart.js exige internet para desenhar o gráfico.
 - `/atualizar` é síncrono: com 12 séries a coleta leva alguns segundos.
 

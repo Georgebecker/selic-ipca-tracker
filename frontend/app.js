@@ -1,6 +1,7 @@
 /* selic-ipca-tracker — dashboard (Vanilla JS + Chart.js)
-   Timer de 24h: conta no front, confere o estado real em GET /status e
-   chama POST /atualizar quando zera (modelo.md, secao 9). */
+   Os dados do BCB sao mensais: nao ha contagem regressiva. A atualizacao e manual,
+   pelo botao "Atualizar" (POST /atualizar); GET /status alimenta apenas o texto de
+   "ultima coleta" no topo e no rodape. */
 
 const API = '';
 
@@ -13,12 +14,6 @@ const SERIES_COMPARATIVO = [
   { codigo: 4390, rotulo: 'Selic (mes)', chave: 'selic', cor: '#4f8cff' }
 ];
 
-const INTERVALO_PADRAO_HORAS = 24;
-const RESINCRONIZAR_MS = 30000;
-
-let segundosRestantes = INTERVALO_PADRAO_HORAS * 3600;
-let intervaloHoras = INTERVALO_PADRAO_HORAS;
-let relogio = null;
 let grafico = null;
 let anosSelecionados = 5;
 
@@ -44,14 +39,6 @@ function formatarMes(iso) {
   const [ano, mes] = iso.slice(0, 7).split('-');
   const nomes = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
   return `${nomes[Number(mes) - 1]}/${ano.slice(2)}`;
-}
-
-function formatarDuracao(segundos) {
-  const total = Math.max(0, Math.floor(segundos));
-  const horas = String(Math.floor(total / 3600)).padStart(2, '0');
-  const minutos = String(Math.floor((total % 3600) / 60)).padStart(2, '0');
-  const resto = String(total % 60).padStart(2, '0');
-  return `${horas}:${minutos}:${resto}`;
 }
 
 function classeSinal(valor) {
@@ -81,45 +68,16 @@ function mostrarAviso(id, mensagem) {
   elemento.hidden = !mensagem;
 }
 
-/* --------------------------------- timer ---------------------------------- */
-
-function atualizarDisplayTimer() {
-  const elemento = document.getElementById('timer');
-  if (elemento) elemento.textContent = formatarDuracao(segundosRestantes);
-}
-
-function reiniciarTimer(segundos) {
-  segundosRestantes = Math.max(0, Math.floor(segundos));
-  atualizarDisplayTimer();
-}
-
-function iniciarRelogio() {
-  if (relogio) clearInterval(relogio);
-  relogio = setInterval(() => {
-    if (segundosRestantes > 0) {
-      segundosRestantes -= 1;
-      atualizarDisplayTimer();
-      return;
-    }
-    dispararAtualizacao();
-  }, 1000);
-}
+/* --------------------------- estado da coleta ----------------------------- */
 
 async function carregarStatus() {
   try {
     const estado = await buscarApi('/status');
-    intervaloHoras = estado.intervalo_horas || INTERVALO_PADRAO_HORAS;
-    const restantes = estado.segundos_restantes > 0
-      ? estado.segundos_restantes
-      : estado.ultima_atualizacao
-        ? 0
-        : intervaloHoras * 3600;
-    reiniciarTimer(restantes);
 
-    const nota = document.getElementById('timer-nota');
-    if (nota) {
-      nota.textContent = estado.ultima_atualizacao
-        ? `última: ${formatarData(estado.ultima_atualizacao)}`
+    const ultima = document.getElementById('ultima-coleta');
+    if (ultima) {
+      ultima.textContent = estado.ultima_atualizacao
+        ? `última coleta: ${formatarData(estado.ultima_atualizacao)}`
         : 'sem coleta registrada';
     }
 
@@ -127,12 +85,12 @@ async function carregarStatus() {
     if (rodape) {
       rodape.textContent = estado.ultima_atualizacao
         ? `Fonte: BCB/SGS. Última coleta: ${formatarData(estado.ultima_atualizacao)}. `
-          + `${estado.series_monitoradas} séries monitoradas.`
-        : 'Fonte: BCB/SGS. Nenhuma coleta registrada — use "Atualizar agora".';
+          + `${estado.series_monitoradas} séries monitoradas (dados mensais).`
+        : 'Fonte: BCB/SGS. Nenhuma coleta registrada — use o botão "Atualizar".';
     }
   } catch (erro) {
-    const nota = document.getElementById('timer-nota');
-    if (nota) nota.textContent = `status indisponível (${erro.message})`;
+    const ultima = document.getElementById('ultima-coleta');
+    if (ultima) ultima.textContent = `status indisponível (${erro.message})`;
   }
 }
 
@@ -148,15 +106,13 @@ async function dispararAtualizacao() {
     if (resultado.status !== 'sucesso') {
       mostrarAviso('aviso-grafico', `Coleta ${resultado.status}. Falhas: ${JSON.stringify(resultado.falhas)}`);
     }
-    reiniciarTimer(intervaloHoras * 3600);
     await Promise.all([carregarResumo(), carregarComparativo(), carregarStatus()]);
   } catch (erro) {
     mostrarAviso('aviso-grafico', `Falha ao atualizar: ${erro.message}`);
-    reiniciarTimer(60);
   } finally {
     if (botao) {
       botao.disabled = false;
-      botao.textContent = 'Atualizar agora';
+      botao.textContent = 'Atualizar';
     }
   }
 }
@@ -364,7 +320,6 @@ async function iniciar() {
 
   ligarFiltros();
   await carregarStatus();
-  iniciarRelogio();
 
   try {
     await carregarResumo();
@@ -373,7 +328,6 @@ async function iniciar() {
   }
 
   await carregarComparativo();
-  setInterval(carregarStatus, RESINCRONIZAR_MS);
 }
 
 document.addEventListener('DOMContentLoaded', iniciar);
