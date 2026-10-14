@@ -13,6 +13,7 @@ data/descartados/*
 !data/raw/.gitkeep
 !data/processed/.gitkeep
 !data/descartados/.gitkeep
+data/backups/
 *.parquet
 *.jsonl
 *.sqlite
