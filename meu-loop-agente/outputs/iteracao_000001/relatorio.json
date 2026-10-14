@@ -1,0 +1,41 @@
+{
+  "iteracao": 1,
+  "hipotese": "Aprofundar o historico coletado: series mensais desde 2010 e diarias desde 2015 (INICIO_MENSAL e INICIO_DIARIO em src/etl/coleta.py)",
+  "iniciado_em": "2026-10-14T19:34:41Z",
+  "terminado_em": "2026-10-14T19:34:45Z",
+  "comandos": [
+    {
+      "comando": "python -m pytest -q",
+      "codigo": 0,
+      "passou": true,
+      "arquivo": "outputs/iteracao_000001/comando_01.txt"
+    }
+  ],
+  "comandos_passaram": true,
+  "metrica": {
+    "nome": "score_qualidade",
+    "unidade": "score de 0 a 1",
+    "antes": 0.5,
+    "depois": 0.9167,
+    "melhorou": true,
+    "melhoria_percentual": 83.34,
+    "meta_atingida": true
+  },
+  "decisao_sugerida": "ACEITO",
+  "motivos": [
+    "todos os comandos passaram e a métrica melhorou 83.34%",
+    "meta do contrato atingida"
+  ],
+  "arquivos_alterados": [],
+  "resumo": {
+    "iteration": 1,
+    "hypothesis": "Aprofundar o historico coletado: series mensais desde 2010 e diarias desde 2015 (INICIO_MENSAL e INICIO_DIARIO em src/etl/coleta.py)",
+    "files_changed": [],
+    "metric_before": 0.5,
+    "metric_after": 0.9167,
+    "improvement_percent": 83.34,
+    "commands_passed": true,
+    "decision": "ACCEPTED",
+    "timestamp": "2026-10-14T19:34:45Z"
+  }
+}

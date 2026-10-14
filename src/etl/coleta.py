@@ -15,10 +15,12 @@ from src.db.repository import abrir_sessao, listar_series, registrar_atualizacao
 from src.etl.bcb_sgs import buscar_serie
 from src.etl.limpeza import limpar_serie, registros_para_banco
 
-# A API do BCB recusa janelas maiores que 10 anos em séries diárias,
-# por isso as séries diárias começam em uma data mais recente.
-INICIO_MENSAL = date(2015, 1, 1)
-INICIO_DIARIO = date(2019, 1, 1)
+# A API do BCB recusa janelas maiores que 10 anos em séries diárias (o cliente
+# divide em janelas de 9 anos). Aqui fica só a profundidade do histórico coletado:
+# mensais desde 2010 e diárias desde 2015, conforme o `inicio_alvo` de cada série
+# em meu-loop-agente/referencias_oficiais.json.
+INICIO_MENSAL = date(2010, 1, 1)
+INICIO_DIARIO = date(2015, 1, 1)
 
 
 def periodo_de_coleta(periodicidade: str | None, hoje: date | None = None) -> tuple[date, date]:
