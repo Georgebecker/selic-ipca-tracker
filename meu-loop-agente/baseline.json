@@ -1,21 +1,13 @@
 {
   "valor_inicial": 0.5,
-  "melhor_valor": 0.9167,
+  "melhor_valor": 0.5,
   "meta_percentual": 20,
   "progresso": {
-    "iteracao_atual": 1,
-    "aceitos": 1,
+    "iteracao_atual": 0,
+    "aceitos": 0,
     "rejeitados": 0,
     "rejeicoes_consecutivas": 0
   },
-  "historico_de_aceites": [
-    {
-      "iteracao": 1,
-      "hipotese": "Aprofundar o historico coletado: series mensais desde 2010 e diarias desde 2015 (INICIO_MENSAL e INICIO_DIARIO em src/etl/coleta.py)",
-      "valor": 0.9167,
-      "variacao_percentual": 83.34,
-      "data": "2026-10-14T19:34:56Z"
-    }
-  ],
-  "atualizado_em": "2026-10-14T19:34:56Z"
+  "historico_de_aceites": [],
+  "atualizado_em": "2026-10-14T20:43:41Z"
 }

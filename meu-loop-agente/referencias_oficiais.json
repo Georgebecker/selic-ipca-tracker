@@ -5,19 +5,20 @@
   "precisao_minima": 0.9,
   "dias_max_para_considerar_recente": 75,
   "min_valores_por_serie": 12,
+  "tolerancia_dias_inicio": 5,
   "series_alvo": [
-    { "codigo_sgs": 432, "nome": "Selic meta", "periodicidade": "diaria", "inicio_alvo": "2015-01-01" },
-    { "codigo_sgs": 4390, "nome": "Selic acumulada no mes", "periodicidade": "mensal", "inicio_alvo": "2010-01-01" },
-    { "codigo_sgs": 433, "nome": "IPCA mensal", "periodicidade": "mensal", "inicio_alvo": "2010-01-01" },
-    { "codigo_sgs": 13522, "nome": "IPCA acumulado 12 meses", "periodicidade": "mensal", "inicio_alvo": "2010-01-01" },
-    { "codigo_sgs": 189, "nome": "IGP-M mensal", "periodicidade": "mensal", "inicio_alvo": "2010-01-01" },
-    { "codigo_sgs": 188, "nome": "INPC mensal", "periodicidade": "mensal", "inicio_alvo": "2010-01-01" },
-    { "codigo_sgs": 12, "nome": "CDI diario", "periodicidade": "diaria", "inicio_alvo": "2015-01-01" },
-    { "codigo_sgs": 1, "nome": "Dolar PTAX venda", "periodicidade": "diaria", "inicio_alvo": "2015-01-01" },
-    { "codigo_sgs": 7478, "nome": "IPCA-15", "periodicidade": "mensal", "inicio_alvo": "2010-01-01" },
-    { "codigo_sgs": 192, "nome": "INCC-DI", "periodicidade": "mensal", "inicio_alvo": "2010-01-01" },
-    { "codigo_sgs": 190, "nome": "IGP-DI", "periodicidade": "mensal", "inicio_alvo": "2010-01-01" },
-    { "codigo_sgs": 25, "nome": "Poupanca", "periodicidade": "mensal", "inicio_alvo": "2010-01-01" }
+    { "codigo_sgs": 432, "nome": "Selic meta", "periodicidade": "diaria", "inicio_alvo": "2010-01-01" },
+    { "codigo_sgs": 4390, "nome": "Selic acumulada no mes", "periodicidade": "mensal", "inicio_alvo": "2005-01-01" },
+    { "codigo_sgs": 433, "nome": "IPCA mensal", "periodicidade": "mensal", "inicio_alvo": "2005-01-01" },
+    { "codigo_sgs": 13522, "nome": "IPCA acumulado 12 meses", "periodicidade": "mensal", "inicio_alvo": "2005-01-01" },
+    { "codigo_sgs": 189, "nome": "IGP-M mensal", "periodicidade": "mensal", "inicio_alvo": "2005-01-01" },
+    { "codigo_sgs": 188, "nome": "INPC mensal", "periodicidade": "mensal", "inicio_alvo": "2005-01-01" },
+    { "codigo_sgs": 12, "nome": "CDI diario", "periodicidade": "diaria", "inicio_alvo": "2010-01-01" },
+    { "codigo_sgs": 1, "nome": "Dolar PTAX venda", "periodicidade": "diaria", "inicio_alvo": "2010-01-01" },
+    { "codigo_sgs": 7478, "nome": "IPCA-15", "periodicidade": "mensal", "inicio_alvo": "2005-01-01" },
+    { "codigo_sgs": 192, "nome": "INCC-DI", "periodicidade": "mensal", "inicio_alvo": "2005-01-01" },
+    { "codigo_sgs": 190, "nome": "IGP-DI", "periodicidade": "mensal", "inicio_alvo": "2005-01-01" },
+    { "codigo_sgs": 25, "nome": "Poupanca", "periodicidade": "mensal", "inicio_alvo": "2005-01-01" }
   ],
   "validacoes": [
     {
