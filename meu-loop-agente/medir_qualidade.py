@@ -2,21 +2,28 @@
 # -*- coding: utf-8 -*-
 """medir_qualidade.py - metrica principal do Loop do selic-ipca-tracker.
 
-Formula: score_qualidade = cobertura x precisao
+Metrica (versao 2):
+  score_qualidade = cobertura de itens atendidos / total de itens
 
-- cobertura: fracao das series acompanhadas que tem dados recentes no banco.
-- precisao:  1 - (erro medio das validacoes / tolerancia), comparando o acumulado
-             calculado pelo projeto com os valores oficiais de
-             `referencias_oficiais.json`.
+  Cada serie-alvo vale 2 itens:
+    1. dados_recentes     - tem pelo menos `min_valores_por_serie` valores e o
+                            ultimo dentro de `dias_max_para_considerar_recente` dias;
+    2. historico_completo - o primeiro valor e igual ou anterior a `inicio_alvo`
+                            da serie (historico profundo para os graficos).
+
+  A precisao dos acumulados (comparacao com as series oficiais) virou GUARDA:
+  nao precisa melhorar, mas nao pode cair abaixo de `precisao_minima`. Se cair,
+  o medidor sai com codigo 1 e a iteracao e REJEITADA pelo verificador.
 
 Uso:
   python meu-loop-agente/medir_qualidade.py
   python meu-loop-agente/medir_qualidade.py --detalhe
 
 Saida minima (lida pela regex de config_loop.json):
-  score_qualidade: 0.8333
+  score_qualidade: 0.5000
 
-Este arquivo NAO pertence ao escopo do agente: fica em meu-loop-agente/.
+A regua (referencias_oficiais.json) e este arquivo ficam em meu-loop-agente/ e NAO
+pertencem ao escopo do agente: sao eles que medem o agente.
 Sem emojis de proposito: compatibilidade com o console do Windows.
 """
 
@@ -36,9 +43,9 @@ ARQ_REFERENCIAS = RAIZ / "referencias_oficiais.json"
 sys.path.insert(0, str(PROJETO))
 
 
-def falhar(mensagem: str) -> None:
+def falhar(mensagem: str, codigo: int = 1) -> None:
     print("[erro] " + mensagem)
-    raise SystemExit(1)
+    raise SystemExit(codigo)
 
 
 def carregar_referencias() -> dict:
@@ -57,7 +64,7 @@ def abrir_banco() -> sqlite3.Connection:
     """Abre o banco do projeto usando a mesma configuracao do codigo (src/config.py)."""
     try:
         from src.config import caminho_do_banco
-    except Exception as erro:  # noqa: BLE001 - queremos a mensagem crua no console
+    except Exception as erro:  # noqa: BLE001 - a mensagem crua ajuda a diagnosticar
         falhar("nao consegui importar src.config: " + repr(erro))
 
     caminho = caminho_do_banco()
@@ -82,12 +89,12 @@ def valores_da_serie(conexao: sqlite3.Connection, codigo_sgs: int) -> list[tuple
     ).fetchall()
 
     valores = []
-    for data_bruta, valor in linhas:
+    for linha in linhas:
         try:
-            dia = date.fromisoformat(str(data_bruta)[:10])
+            dia = date.fromisoformat(str(linha["data"])[:10])
         except ValueError:
             continue
-        valores.append((dia, float(valor)))
+        valores.append((dia, float(linha["valor"])))
     return valores
 
 
@@ -95,47 +102,65 @@ def acumular_percentual(valores: list[tuple[date, float]]) -> float:
     """Acumula taxas percentuais mensais usando o calculo do proprio projeto."""
     from src.analise.calculos import acumular
 
-    taxas = [valor / 100.0 for _, valor in valores]
-    return acumular(taxas) * 100.0
+    return acumular([valor / 100.0 for _, valor in valores]) * 100.0
 
 
 def medir_cobertura(conexao: sqlite3.Connection, referencias: dict):
-    acompanhadas = referencias.get("series_acompanhadas", [])
+    """Devolve (cobertura, itens, atendidos, faltando) com o detalhe por serie."""
+    series_alvo = referencias.get("series_alvo", [])
+    if not series_alvo:
+        falhar("referencias_oficiais.json nao lista nenhuma serie alvo")
+
     dias_max = int(referencias.get("dias_max_para_considerar_recente", 75))
     min_valores = int(referencias.get("min_valores_por_serie", 12))
-    limite = date.today() - timedelta(days=dias_max)
+    limite_recente = date.today() - timedelta(days=dias_max)
 
-    codigos = [int(item["codigo_sgs"]) for item in acompanhadas]
-    if not codigos:
-        falhar("referencias_oficiais.json nao lista nenhuma serie acompanhada")
+    itens = []
+    atendidos = 0
+    faltando = []
 
-    marcadores = ",".join("?" * len(codigos))
-    linhas = conexao.execute(
-        "SELECT s.codigo_sgs AS codigo, COUNT(v.valor) AS total, MAX(v.data) AS ultima "
-        "FROM series s LEFT JOIN valores v ON v.serie_id = s.id "
-        "WHERE s.codigo_sgs IN (" + marcadores + ") "
-        "GROUP BY s.codigo_sgs",
-        codigos,
-    ).fetchall()
-    situacao = {int(linha["codigo"]): linha for linha in linhas}
+    for alvo in series_alvo:
+        codigo = int(alvo["codigo_sgs"])
+        nome = str(alvo.get("nome", codigo))
+        inicio_alvo = date.fromisoformat(str(alvo["inicio_alvo"])[:10])
+        valores = valores_da_serie(conexao, codigo)
 
-    validadas, sem_dados = [], []
-    for codigo in codigos:
-        linha = situacao.get(codigo)
-        total = int(linha["total"]) if linha else 0
-        ultima = None
-        if linha and linha["ultima"]:
-            try:
-                ultima = date.fromisoformat(str(linha["ultima"])[:10])
-            except ValueError:
-                ultima = None
-        if total >= min_valores and ultima is not None and ultima >= limite:
-            validadas.append((codigo, total, ultima))
-        else:
-            sem_dados.append((codigo, total, ultima))
+        # item 1: dados recentes
+        recente = (
+            len(valores) >= min_valores
+            and valores
+            and valores[-1][0] >= limite_recente
+        )
+        detalhe_recente = (
+            "ultimo valor em " + valores[-1][0].isoformat() if valores else "sem dados"
+        ) + (" | " + str(len(valores)) + " valores")
 
-    cobertura = len(validadas) / len(codigos) if codigos else 0.0
-    return cobertura, validadas, sem_dados
+        # item 2: historico completo
+        primeiro = valores[0][0] if valores else None
+        historico = primeiro is not None and primeiro <= inicio_alvo
+        detalhe_historico = (
+            "primeiro valor em " + primeiro.isoformat() + " (alvo: "
+            + inicio_alvo.isoformat() + ")"
+            if primeiro
+            else "sem dados"
+        )
+
+        for item, ok, detalhe in (
+            ("dados_recentes", recente, detalhe_recente),
+            ("historico_completo", historico, detalhe_historico),
+        ):
+            itens.append(
+                {"codigo_sgs": codigo, "nome": nome, "item": item, "atendido": bool(ok),
+                 "detalhe": detalhe}
+            )
+            if ok:
+                atendidos += 1
+            else:
+                faltando.append((codigo, nome, item, detalhe))
+
+    total = len(itens)
+    cobertura = atendidos / total if total else 0.0
+    return cobertura, total, atendidos, faltando
 
 
 def avaliar_validacao(conexao: sqlite3.Connection, validacao: dict):
@@ -169,16 +194,36 @@ def avaliar_validacao(conexao: sqlite3.Connection, validacao: dict):
             return None, "sem valores da serie oficial " + str(codigo_oficial)
 
         janela = valores[-12:]
-        fim_janela = janela[-1][0]
-        candidatos = [item for item in oficiais if item[0] <= fim_janela]
+        fim = janela[-1][0]
+        candidatos = [item for item in oficiais if item[0] <= fim]
         if not candidatos:
-            return None, "a serie oficial " + str(codigo_oficial) + " nao cobre " + str(fim_janela)
+            return None, "a serie oficial nao cobre " + fim.isoformat()
         referencia = candidatos[-1]
 
         nosso = acumular_percentual(janela)
         return abs(nosso - referencia[1]), (
             "nosso %.4f%% x oficial %.4f%% ate %s"
             % (nosso, referencia[1], referencia[0].isoformat())
+        )
+
+    if tipo == "anual_oficial":
+        codigo = int(validacao["codigo_sgs"])
+        codigo_oficial = int(validacao["comparar_com"])
+        ano = int(validacao["ano"])
+        valores = [item for item in valores_da_serie(conexao, codigo) if item[0].year == ano]
+        if len(valores) < 12:
+            return None, "a serie " + str(codigo) + " nao tem 12 meses em " + str(ano)
+
+        oficiais = valores_da_serie(conexao, codigo_oficial)
+        candidatos = [item for item in oficiais if item[0].year == ano]
+        if not candidatos:
+            return None, "a serie oficial " + str(codigo_oficial) + " nao cobre " + str(ano)
+        referencia = candidatos[-1]
+
+        nosso = acumular_percentual(valores[:12])
+        return abs(nosso - referencia[1]), (
+            "%d: nosso %.4f%% x oficial %.2f%%"
+            % (ano, nosso, referencia[1])
         )
 
     return None, "tipo de validacao desconhecido: " + str(tipo)
@@ -210,39 +255,44 @@ def medir_precisao(conexao: sqlite3.Connection, referencias: dict):
 
 def main() -> int:
     analisador = argparse.ArgumentParser(description="Mede o score_qualidade do Loop.")
-    analisador.add_argument("--detalhe", action="store_true", help="mostra cada verificacao")
+    analisador.add_argument("--detalhe", action="store_true", help="mostra cada item e validacao")
     argumentos = analisador.parse_args()
 
     referencias = carregar_referencias()
     conexao = abrir_banco()
     try:
-        cobertura, validadas, sem_dados = medir_cobertura(conexao, referencias)
+        cobertura, total, atendidos, faltando = medir_cobertura(conexao, referencias)
         precisao, erro_medio, detalhes = medir_precisao(conexao, referencias)
     finally:
         conexao.close()
 
-    score = cobertura * precisao
     tolerancia = float(referencias.get("tolerancia_pp", 0.05))
+    precisao_minima = float(referencias.get("precisao_minima", 0.9))
 
-    print("score_qualidade: %.4f" % score)
-    print("cobertura: %.4f (%d/%d series com dados recentes)"
-          % (cobertura, len(validadas), len(validadas) + len(sem_dados)))
-    print("precisao: %.4f (erro medio %.4f p.p. | tolerancia %.4f p.p.)"
-          % (precisao, erro_medio, tolerancia))
+    print("score_qualidade: %.4f" % cobertura)
+    print("cobertura: %.4f (%d/%d itens atendidos)" % (cobertura, atendidos, total))
+    print("precisao (guarda): %.4f (erro medio %.4f p.p. | tolerancia %.4f p.p. | minimo %.2f)"
+          % (precisao, erro_medio, tolerancia, precisao_minima))
 
     if argumentos.detalhe:
         print("")
-        print("series validadas:")
-        for codigo, total, ultima in validadas:
-            print("  - %s: %d valores, ultimo em %s" % (codigo, total, ultima.isoformat()))
-        if sem_dados:
-            print("series sem dados recentes:")
-            for codigo, total, ultima in sem_dados:
-                print("  - %s: %d valores, ultimo em %s"
-                      % (codigo, total, ultima.isoformat() if ultima else "nenhum"))
-        print("verificacoes de precisao:")
+        print("itens faltando (o que o agente pode melhorar):")
+        if not faltando:
+            print("  (nenhum: cobertura completa)")
+        for codigo, nome, item, detalhe in faltando:
+            print("  - %s (%s) -> %s: %s" % (nome, codigo, item, detalhe))
+        print("")
+        print("validacoes de precisao:")
         for nome, erro, detalhe in detalhes:
             print("  - %s: erro %.4f p.p. (%s)" % (nome, erro, detalhe))
+
+    if precisao < precisao_minima:
+        print("")
+        print("guarda_de_precisao: REPROVADA (precisao %.4f abaixo do minimo %.2f)"
+              % (precisao, precisao_minima))
+        return 1
+
+    print("guarda_de_precisao: aprovada")
     return 0
 
 
