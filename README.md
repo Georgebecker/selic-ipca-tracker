@@ -7,16 +7,19 @@
 | Dimensão | Valor |
 |----------|-------|
 | **Propósito** | `estudo` · `utilidade` |
-| **Maturidade** | `usável` |
+| **Maturidade** | `estável` |
 | **O que estou treinando** | séries temporais, composição de taxas, banco SQLite, layout responsivo |
 | **Quem usaria** | devs iniciantes, curiosos sobre inflação e juros no Brasil |
 
-> Nota de honestidade (regras R-CL1, R-CL2 e R-CL5 do `modelo.md`): a maturidade é
-> `usável` porque o projeto tem README, testes passando e está publicado no GitHub
-> (repositório privado, `origin` em `master`). O propósito **não** inclui `entrega`
-> porque ainda não há uso real demonstrado por terceiros. Para chegar a `estável`
-> faltam CI configurado, releases tagueadas e manutenção contínua. Esta tabela é
-> reavaliada a cada ciclo do Loop de melhoria contínua (§1.1.5 do `modelo.md`).
+> Nota de honestidade (regras R-CL1, R-CL2 e R-CL5 do `modelo.md`), conferida em
+> 14/10/2026:
+> - `estável` exige README + testes passando + push + **CI** + **release** + manutenção
+>   contínua. Está tudo de pé: 57 testes, CI verde em Python 3.12 e 3.13
+>   (`actions/workflows/ci.yml`), release **v0.2.0** publicada e o Loop de melhoria
+>   contínua rodando com registro em `meu-loop-agente/log.md`.
+> - O propósito **não** inclui `entrega` porque ainda não há uso real demonstrado por
+>   terceiros (R-CL1: `entrega` exige README, teste e uso real). Hoje o repositório é
+>   privado e sem usuários externos — dizer `entrega` seria inflar a classificação.
 
 Acompanhamento de indicadores econômicos brasileiros (Selic, IPCA, IGP-M e INPC)
 com coleta no Banco Central, banco SQLite, API REST documentada e dashboard web
