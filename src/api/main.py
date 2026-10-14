@@ -26,16 +26,31 @@ from src.db.repository import (
     semear_series,
     ultima_atualizacao,
 )
-from src.scheduler.timer import INTERVALO_HORAS, proxima_atualizacao, segundos_restantes
+from src.scheduler.timer import (
+    coleta_automatica_ligada,
+    intervalo_horas,
+    ligar_se_configurado,
+    proxima_atualizacao,
+    segundos_restantes,
+)
 
 
 @asynccontextmanager
 async def ciclo_de_vida(_app: FastAPI):
-    """Cria o banco e semeia as séries na subida da aplicação."""
+    """Cria o banco, semeia as séries e liga a coleta automática se configurada."""
     obter_engine()
     with abrir_sessao() as sessao:
         semear_series(sessao)
-    yield
+
+    agendador = ligar_se_configurado()
+    try:
+        yield
+    finally:
+        if agendador is not None:
+            try:
+                agendador.shutdown(wait=False)
+            except Exception:  # noqa: BLE001 - encerrar o agendador nao pode travar a saida
+                pass
 
 
 app = FastAPI(
@@ -75,15 +90,17 @@ def _progresso() -> ProgressoColetaOut:
 
 @app.get("/status", response_model=StatusOut, tags=["atualização"], summary="Estado do serviço e da coleta")
 def get_status() -> StatusOut:
+    intervalo = intervalo_horas()
     with abrir_sessao() as sessao:
         ultima = ultima_atualizacao(sessao)
         momento = ultima.data_hora if ultima else None
         return StatusOut(
             ultima_atualizacao=momento,
-            proxima_atualizacao=proxima_atualizacao(momento, INTERVALO_HORAS),
-            segundos_restantes=segundos_restantes(momento, intervalo_horas=INTERVALO_HORAS),
-            intervalo_horas=INTERVALO_HORAS,
+            proxima_atualizacao=proxima_atualizacao(momento, intervalo),
+            segundos_restantes=segundos_restantes(momento, intervalo=intervalo),
+            intervalo_horas=intervalo,
             series_monitoradas=len(listar_series(sessao)),
+            coleta_automatica=coleta_automatica_ligada(),
             coleta=_progresso(),
         )
 

@@ -125,4 +125,5 @@ class StatusOut(BaseModel):
     segundos_restantes: int
     intervalo_horas: int
     series_monitoradas: int
+    coleta_automatica: bool = False
     coleta: ProgressoColetaOut
