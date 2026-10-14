@@ -113,6 +113,7 @@ def medir_cobertura(conexao: sqlite3.Connection, referencias: dict):
 
     dias_max = int(referencias.get("dias_max_para_considerar_recente", 75))
     min_valores = int(referencias.get("min_valores_por_serie", 12))
+    tolerancia_dias = int(referencias.get("tolerancia_dias_inicio", 0))
     limite_recente = date.today() - timedelta(days=dias_max)
 
     itens = []
@@ -135,12 +136,16 @@ def medir_cobertura(conexao: sqlite3.Connection, referencias: dict):
             "ultimo valor em " + valores[-1][0].isoformat() if valores else "sem dados"
         ) + (" | " + str(len(valores)) + " valores")
 
-        # item 2: historico completo
+        # item 2: historico completo (com folga para feriado/fim de semana: o primeiro
+        # valor publicado pode cair alguns dias depois do inicio_alvo)
         primeiro = valores[0][0] if valores else None
-        historico = primeiro is not None and primeiro <= inicio_alvo
+        limite_historico = inicio_alvo + timedelta(days=tolerancia_dias)
+        historico = primeiro is not None and primeiro <= limite_historico
         detalhe_historico = (
             "primeiro valor em " + primeiro.isoformat() + " (alvo: "
-            + inicio_alvo.isoformat() + ")"
+            + inicio_alvo.isoformat()
+            + (", tolerancia %d dias" % tolerancia_dias if tolerancia_dias else "")
+            + ")"
             if primeiro
             else "sem dados"
         )
