@@ -1,46 +1,67 @@
-# Ganchos de protecao do git
+# Ganchos de proteção do git — segurança máxima
 
-## O que protege
+Dois ganchos em `sh` que impedem segredo de entrar no repositório:
 
-- `pre-commit` — bloqueia qualquer commit que tente incluir `.env` ou variantes
-  (`.env.local`, `.env.prod` etc.). O unico arquivo `.env*` permitido e o
-  `.env.example` (modelo sem segredos).
+- `pre-commit` — roda **no commit**. Recusa o commit quando algum arquivo de segredo
+  (`.env` ou variante) entra na lista, ou quando uma linha adicionada contém valor com
+  cara de chave. Funciona inclusive com `git add -f`.
+- `pre-push` — roda **no envio ao remoto**. É a segunda barreira: reanalisa os commits
+  da fila e recusa o `push` mesmo que o commit tenha passado com `--no-verify`.
 
-- `pre-push` — segunda barreira: antes de enviar ao repositorio remoto, confere
-  todos os commits que serao enviados e bloqueia o push se algum contiver
-  `.env` ou variantes. Protege mesmo se um commit passou com `--no-verify`.
+O único arquivo `.env*` permitido é o `.env.example` (modelo, sem valores).
 
-Juntas, elas formam a regra "o `.env` NUNCA vai para o git": funcionam mesmo
-se alguem usar `git add -f` ou `git add .` sem conferir, ou tentar burlar o commit.
+## O que é considerado segredo
 
-## Como ativar (uma vez so)
+| Padrão | Origem |
+|---|---|
+| `sk-` seguido de 24 ou mais caracteres alfanuméricos | DeepSeek / OpenAI |
+| `sk-proj-` | OpenAI (projeto) |
+| `AIza` + 33 caracteres | Google (API key) |
+| `hf_` + 30 caracteres | Hugging Face |
+| `ghp_`, `github_pat_` | GitHub |
+| `AKIA` + 16 caracteres maiúsculos | AWS |
+| `-----BEGIN ... PRIVATE KEY-----` | chave privada |
+| `NOME_DE_CHAVE` + `=`/`:` + valor de 16+ caracteres | atribuição em qualquer arquivo |
 
-Repositorio ainda nao criado:
+O valor da chave não mora em arquivo: mora na **variável de ambiente do usuário** do
+Windows. Use `segredos.ps1 -Definir NOME_DA_CHAVE`.
+
+## Instalação
 
 ```powershell
+# neste projeto (o script roda a partir de .githooks/)
 powershell -ExecutionPolicy Bypass -File .githooks\instalar.ps1
+
+# em todos os repositórios de uma raiz
+powershell -ExecutionPolicy Bypass -File "$env:USERPROFILE\.copilot\scripts\instalar-hooks.ps1" -Destino "D:\Projetos" -Todos
 ```
 
-Repositorio ja criado, so ativar os ganchos:
+O instalador copia estes arquivos para `.githooks/` do projeto, garante fim de linha
+LF (obrigatório para `sh`), registra `.githooks/* text eol=lf` no `.gitattributes` e
+aponta `core.hooksPath` para `.githooks`.
+
+## Teste rápido
+
+Monte o valor falso em tempo de execução — assim este próprio arquivo não guarda um
+texto com formato de chave (ele passa pelo mesmo gancho):
 
 ```powershell
-git config core.hooksPath .githooks
+$falso = 'sk-' + ('a' * 32)
+"CHAVE_DE_TESTE=$falso" | Out-File .env -Encoding utf8
+git add -f .env ; git commit -m "teste"     # o gancho recusa
+git reset ; Remove-Item .env
 ```
 
-## Como conferir se esta ativo
+## Por que duas barreiras
 
-```powershell
-git config core.hooksPath
-```
+Um commit pode ser criado com `--no-verify` (pulando o `pre-commit`). O `pre-push`
+examina os commits que estão sendo enviados e recusa o envio — então o segredo não
+chega ao GitHub nem nesse caso. Depois de removê-lo, ainda é preciso **revogar a chave
+na origem**: histórico reescrito não desfaz um vazamento.
 
-Tem que responder `.githooks`. Tambem vale conferir que os arquivos
-`.githooks\pre-commit` e `.githooks\pre-push` existem.
+## Falso positivo
 
-## Teste rapido (opcional)
-
-Crie um arquivo `.env` de mentira, tente `git add .env` + `git commit`:
-o commit tem que ser recusado com a mensagem "BLOQUEADO".
-
-Para testar o `pre-push` sem risco: crie um repositorio de teste em pasta
-temporaria, adicione um `.env`, faca o commit com `--no-verify` e tente
-`git push` para um remoto de mentira — o push tem que ser bloqueado.
+A mensagem indica apenas o **arquivo** suspeito, nunca o valor. Se for um exemplo em
+documentação ou um dado de teste, ajuste a linha para não parecer chave real (evite
+sequências longas com prefixo de chave). Não existe marcador de exceção de propósito:
+um atalho desses acabaria virando a porta de entrada do vazamento.
