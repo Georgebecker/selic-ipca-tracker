@@ -1,5 +1,7 @@
 # selic-ipca-tracker
 
+[![CI](https://github.com/Georgebecker/selic-ipca-tracker/actions/workflows/ci.yml/badge.svg)](https://github.com/Georgebecker/selic-ipca-tracker/actions/workflows/ci.yml)
+
 ## Classificação
 
 | Dimensão | Valor |
@@ -111,6 +113,18 @@ python meu-loop-agente/verificar_iteracao.py estado      # situação atual do L
 python meu-loop-agente/medir_qualidade.py --detalhe      # métrica score_qualidade
 python -m pytest -q                                      # verificação obrigatória
 ```
+
+## Qualidade
+
+- **57 testes** (`python -m pytest -q`) — ETL, coleta (paralelismo, retentativa, falhas),
+  execução em segundo plano, cálculos, API, classificação e responsividade.
+- **CI** (`.github/workflows/ci.yml`): a cada push/PR roda os testes em Python 3.12 e 3.13,
+  compila os módulos, confere que nenhum arquivo de segredo está versionado e sobe a
+  aplicação para checar `/status`, `/series` e `/docs`.
+- **Guarda local**: o mesmo teste de segredo roda no `pre-commit`/`pre-push` (ver
+  `REGRAS_DE_OURO.md`, R36) — a proteção não depende do CI.
+- **Loop de melhoria contínua**: métrica `score_qualidade` com histórico em
+  `meu-loop-agente/log.md`.
 
 ## Limitações
 

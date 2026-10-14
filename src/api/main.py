@@ -40,7 +40,7 @@ async def ciclo_de_vida(_app: FastAPI):
 
 app = FastAPI(
     title="selic-ipca-tracker",
-    version="0.1.0",
+    version="0.2.0",
     description=(
         "Indicadores econômicos brasileiros (Selic, IPCA, IGP-M, INPC) coletados "
         "das APIs do Banco Central, com correção monetária e coleta sob demanda."
