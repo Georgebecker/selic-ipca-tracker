@@ -25,3 +25,14 @@
 - **Métrica**: `score_qualidade` medida pelo medidor, gravada em `baseline.json`.
 - **Decisão**: BASELINE
 - **Data/hora**: (preenchido pelo verificador)
+
+## Iteração 1
+- **Hipótese**: Aprofundar o historico coletado: series mensais desde 2010 e diarias desde 2015 (INICIO_MENSAL e INICIO_DIARIO em src/etl/coleta.py)
+- **Arquivos alterados**: src/etl/coleta.py
+- **Métrica antes**: 0.5 score de 0 a 1
+- **Métrica depois**: 0.9167 score de 0 a 1
+- **Melhoria**: 83.34%
+- **Comandos passaram**: Sim
+- **Decisão**: ACEITO
+- **Data/hora**: 2026-10-14T19:34:56Z
+

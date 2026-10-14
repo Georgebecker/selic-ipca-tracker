@@ -1,0 +1,6 @@
+$ python meu-loop-agente/medir_qualidade.py
+
+score_qualidade: 0.9167
+cobertura: 0.9167 (22/24 itens atendidos)
+precisao (guarda): 0.9437 (erro medio 0.0028 p.p. | tolerancia 0.0500 p.p. | minimo 0.90)
+guarda_de_precisao: aprovada
