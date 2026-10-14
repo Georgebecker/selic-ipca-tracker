@@ -1,8 +1,8 @@
 {
   "iteracao": 1,
-  "hipotese": "Aprofundar o historico coletado: series mensais desde 2010 e diarias desde 2015 (INICIO_MENSAL e INICIO_DIARIO em src/etl/coleta.py)",
-  "iniciado_em": "2026-10-14T19:34:41Z",
-  "terminado_em": "2026-10-14T19:34:45Z",
+  "hipotese": "Aprofundar o historico coletado: mensais desde 2005 e diarias desde 2010 (INICIO_MENSAL/INICIO_DIARIO), somado a retentativa das series que o BCB responde vazio",
+  "iniciado_em": "2026-10-14T20:50:03Z",
+  "terminado_em": "2026-10-14T20:50:08Z",
   "comandos": [
     {
       "comando": "python -m pytest -q",
@@ -16,26 +16,26 @@
     "nome": "score_qualidade",
     "unidade": "score de 0 a 1",
     "antes": 0.5,
-    "depois": 0.9167,
+    "depois": 1.0,
     "melhorou": true,
-    "melhoria_percentual": 83.34,
+    "melhoria_percentual": 100.0,
     "meta_atingida": true
   },
   "decisao_sugerida": "ACEITO",
   "motivos": [
-    "todos os comandos passaram e a métrica melhorou 83.34%",
+    "todos os comandos passaram e a métrica melhorou 100.00%",
     "meta do contrato atingida"
   ],
   "arquivos_alterados": [],
   "resumo": {
     "iteration": 1,
-    "hypothesis": "Aprofundar o historico coletado: series mensais desde 2010 e diarias desde 2015 (INICIO_MENSAL e INICIO_DIARIO em src/etl/coleta.py)",
+    "hypothesis": "Aprofundar o historico coletado: mensais desde 2005 e diarias desde 2010 (INICIO_MENSAL/INICIO_DIARIO), somado a retentativa das series que o BCB responde vazio",
     "files_changed": [],
     "metric_before": 0.5,
-    "metric_after": 0.9167,
-    "improvement_percent": 83.34,
+    "metric_after": 1.0,
+    "improvement_percent": 100.0,
     "commands_passed": true,
     "decision": "ACCEPTED",
-    "timestamp": "2026-10-14T19:34:45Z"
+    "timestamp": "2026-10-14T20:50:08Z"
   }
 }
