@@ -5,15 +5,16 @@
 | Dimensão | Valor |
 |----------|-------|
 | **Propósito** | `estudo` · `utilidade` |
-| **Maturidade** | `funcional` |
+| **Maturidade** | `usável` |
 | **O que estou treinando** | séries temporais, composição de taxas, timer 24h, banco SQLite |
 | **Quem usaria** | devs iniciantes, curiosos sobre inflação e juros no Brasil |
 
-> Nota de honestidade (regras R-CL1, R-CL2 e R-CL5 do `modelo.md`): o projeto tem
-> README e testes passando, mas ainda não tem *push* em repositório remoto nem uso
-> real demonstrado por terceiros. Por isso a maturidade é `funcional` (vira `usável`
-> com o push no GitHub) e o propósito não inclui `entrega`. Esta tabela é reavaliada
-> a cada ciclo do Loop de melhoria contínua.
+> Nota de honestidade (regras R-CL1, R-CL2 e R-CL5 do `modelo.md`): a maturidade é
+> `usável` porque o projeto tem README, testes passando e está publicado no GitHub
+> (repositório privado, `origin` em `master`). O propósito **não** inclui `entrega`
+> porque ainda não há uso real demonstrado por terceiros. Para chegar a `estável`
+> faltam CI configurado, releases tagueadas e manutenção contínua. Esta tabela é
+> reavaliada a cada ciclo do Loop de melhoria contínua (§1.1.5 do `modelo.md`).
 
 Acompanhamento de indicadores econômicos brasileiros (Selic, IPCA, IGP-M e INPC)
 com coleta automática no Banco Central, banco SQLite, API REST documentada e
@@ -40,6 +41,10 @@ uvicorn src.api.main:app --reload
 - Dashboard: <http://localhost:8000/app/>
 
 Com Docker: `docker compose up --build`.
+
+Repositório: `https://github.com/Georgebecker/selic-ipca-tracker` (privado), branch
+`master`. Chave de API não vai em arquivo: vive na variável de ambiente do usuário
+(ver `REGRAS_DE_OURO.md`, R36).
 
 ## Fonte de dados
 
