@@ -78,6 +78,39 @@ class ComparacaoOut(BaseModel):
     series: list[SerieAlinhadaOut]
 
 
+class ExpectativaOut(BaseModel):
+    """Uma expectativa do boletim Focus (mediana, faixa e nº de respondentes)."""
+
+    indicador: str
+    referencia: str | None = None
+    data: date | None = None
+    mediana: float | None = None
+    media: float | None = None
+    minimo: float | None = None
+    maximo: float | None = None
+    respondentes: int | None = None
+
+
+class ExpectativasOut(BaseModel):
+    """Expectativas do mercado comparadas com o realizado.
+
+    `disponivel=False` (com `motivo`) quando o Olinda não respondeu: a interface mostra o
+    aviso e o resto do painel continua funcionando.
+    """
+
+    fonte: str
+    disponivel: bool = True
+    motivo: str | None = None
+    data_referencia: date | None = None
+    ipca_12_meses: ExpectativaOut | None = None
+    igpm_12_meses: ExpectativaOut | None = None
+    ipca_anual: ExpectativaOut | None = None
+    selic: ExpectativaOut | None = None
+    realizado_ipca_12m: float | None = None
+    realizado_data: date | None = None
+    diferenca_pp: float | None = None
+
+
 class CorrecaoRequest(BaseModel):
     """Pedido de correção monetária."""
 
