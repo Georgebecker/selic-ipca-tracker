@@ -230,6 +230,8 @@ function montarGrafico(eixo, series) {
       pointRadius: 0,
       pointHoverRadius: 4,
       tension: 0.25,
+      // spanGaps: o mês corrente vem nulo em algumas séries (o instituto ainda não
+      // publicou); sem isso a linha ficaria cortada no fim do gráfico.
       spanGaps: true
     };
   });

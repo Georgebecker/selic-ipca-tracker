@@ -134,6 +134,8 @@ def get_resumo() -> ResumoOut:
 
             base = None
             if info["codigo_acumulado"] != info["codigo_sgs"]:
+                # Selic meta (432) é anualizada: acumular 12 meses exige a série mensal
+                # equivalente (4390). Para IPCA/IGP-M/INPC a própria série já é mensal.
                 base = [
                     (item.data, item.valor)
                     for item in valores_da_serie(sessao, info["codigo_acumulado"])
