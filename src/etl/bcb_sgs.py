@@ -1,6 +1,6 @@
 """Cliente da API SGS do Banco Central (séries temporais).
 
-Limitações conhecidas (modelo.md, seção 2.1):
+Limitações conhecidas da API:
 - a API recusa janelas maiores que 10 anos em séries diárias (HTTP 406);
 - séries diárias exigem `dataInicial` e `dataFinal` juntos;
 - as datas vão em `dd/mm/aaaa`.

@@ -1,4 +1,4 @@
-"""Verificação da seção `## Classificação` do README (modelo.md, seção 1.1.4)."""
+"""Verificação da seção `## Classificação` do README."""
 
 from __future__ import annotations
 

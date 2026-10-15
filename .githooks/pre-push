@@ -10,7 +10,6 @@
 # Pega ate o commit criado com --no-verify, que burlou a primeira barreira.
 # A mensagem mostra apenas o commmit e o NOME DO ARQUIVO — nunca o valor.
 #
-# Template: %USERPROFILE%\.copilot\templates\githooks\
 # ------------------------------------------------------------------
 
 PADRAO='sk-[A-Za-z0-9]{24,}|sk-proj-[A-Za-z0-9_-]{20,}|AIza[0-9A-Za-z_-]{33,}|hf_[A-Za-z0-9]{30,}|ghp_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{30,}|AKIA[0-9A-Z]{16}|-----BEGIN [A-Z ]*PRIVATE KEY-----|(DEEPSEEK|OPENAI|ANTHROPIC|GOOGLE|GEMINI|HUGGINGFACE|HF|PEXELS|SERPAPI|STRIPE)[A-Z0-9_]*(API_?KEY|TOKEN|SECRET|PASSWORD)[A-Z0-9_]*[ \t]*[:=][^A-Za-z0-9]{0,3}[A-Za-z0-9_-]{16,}'

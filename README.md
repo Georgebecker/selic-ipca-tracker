@@ -11,7 +11,7 @@
 | **O que estou treinando** | séries temporais, composição de taxas, banco SQLite, layout responsivo |
 | **Quem usaria** | devs iniciantes, curiosos sobre inflação e juros no Brasil |
 
-> Nota de honestidade (regras R-CL1, R-CL2 e R-CL5 do `modelo.md`), reconferida em
+> Nota de honestidade (critérios R-CL1, R-CL2 e R-CL5 do meu método), reconferida em
 > 15/10/2026:
 > - `estável` exige README + testes passando + push + **CI** + **release** + manutenção
 >   contínua. Está tudo de pé: **108 testes** (rodados nesta máquina em 15/10/2026),
@@ -101,9 +101,9 @@ uvicorn src.api.main:app --reload
 
 Com Docker: `docker compose up --build`.
 
-Repositório: `https://github.com/Georgebecker/selic-ipca-tracker` (privado), branch
-`master`. Chave de API não vai em arquivo: vive na variável de ambiente do usuário
-(ver `REGRAS_DE_OURO.md`, R36).
+Repositório: <https://github.com/Georgebecker/selic-ipca-tracker> (público), branch
+`master`. Chave de API não vai em arquivo: vive na variável de ambiente do usuário, e o
+gancho `pre-commit` barra qualquer commit que traga valor de chave.
 
 ## Fonte de dados
 
@@ -159,18 +159,17 @@ selic-ipca-tracker/
 ├── tests/                    # test_etl, test_calculos, test_api, test_classificacao
 ├── img/                      # capturas do dashboard usadas neste README
 ├── sql/schema.sql            # esquema do banco (referência)
-├── meu-loop-agente/          # contrato e verificador do Loop de melhoria contínua
-├── NOTES.md                  # decisões técnicas e o porquê de cada uma
-├── log_loop.md               # ciclos do Loop (hipótese, métrica antes/depois, decisão)
+├── meu-loop-agente/          # medidor e verificador da métrica de qualidade
 └── data/                     # banco SQLite local (fora do git)
 ```
 
 ## Loop de melhoria contínua
 
-O agente que melhora este projeto em ciclos fica em `meu-loop-agente/`
-(metodologia Loop Engineering). Contrato, métrica e limites em
-`meu-loop-agente/program.md` e `meu-loop-agente/config_loop.json`; histórico das
-iterações em `meu-loop-agente/log.md` e decisões de projeto em `log_loop.md`.
+O projeto é mantido em ciclos: uma hipótese por vez, medida antes e depois, e aceita ou
+rejeitada pelos números — não pela impressão. O medidor e o verificador ficam em
+`meu-loop-agente/` (`medir_qualidade.py`, `verificar_iteracao.py`), os limites da métrica
+em `meu-loop-agente/config_loop.json` e o histórico das iterações em
+`meu-loop-agente/log.md`.
 
 ```powershell
 python meu-loop-agente/verificar_iteracao.py estado      # situação atual do Loop
@@ -208,8 +207,8 @@ O serviço vive enquanto a janela do `servir.ps1` estiver aberta. O `backup.ps1`
 - **CI** (`.github/workflows/ci.yml`): a cada push/PR roda os testes em Python 3.12 e 3.13,
   compila os módulos, confere que nenhum arquivo de segredo está versionado e sobe a
   aplicação para checar `/status`, `/series` e `/docs`.
-- **Guarda local**: o mesmo teste de segredo roda no `pre-commit`/`pre-push` (ver
-  `REGRAS_DE_OURO.md`, R36) — a proteção não depende do CI.
+- **Guarda local**: o mesmo teste de segredo roda no `pre-commit`/`pre-push` — a
+  proteção não depende do CI.
 - **Loop de melhoria contínua**: métrica `score_qualidade` com histórico em
   `meu-loop-agente/log.md`.
 

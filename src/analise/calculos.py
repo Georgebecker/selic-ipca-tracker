@@ -1,4 +1,4 @@
-"""Fórmulas financeiras do projeto (modelo.md, seção 3).
+"""Fórmulas financeiras do projeto.
 
 Todas as taxas são decimais: 0,5% = 0.005.
 """

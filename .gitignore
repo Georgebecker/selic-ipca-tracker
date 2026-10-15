@@ -36,3 +36,14 @@ logs/
 .idea/
 .DS_Store
 Thumbs.db
+
+# ---- Documentos pessoais de metodo (ficam so na minha maquina) ----
+# Nao vao para o repositorio: sao o "como eu trabalho", nao o projeto. Se um dia
+# precisarem voltar, basta remover a linha e commitar de novo.
+REGRAS_DE_OURO.md
+modelo.md
+NOTES.md
+log_loop.md
+meu-loop-agente/program.md
+meu-loop-agente/system_prompt.md
+meu-loop-agente/README.md
