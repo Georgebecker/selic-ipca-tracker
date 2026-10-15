@@ -1,6 +1,6 @@
 """Tabelas do banco (SQLAlchemy 2.0) — séries, valores e log de atualizações.
 
-Espelha o esquema descrito no `modelo.md` (seção 6) e em `sql/schema.sql`.
+Espelha o esquema descrito em `sql/schema.sql`.
 """
 
 from __future__ import annotations

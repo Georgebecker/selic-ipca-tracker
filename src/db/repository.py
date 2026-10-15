@@ -14,7 +14,7 @@ from sqlalchemy.orm import Session, sessionmaker
 from src.config import criar_pasta_do_banco, modo_sql, url_do_banco
 from src.db.models import Atualizacao, Base, Serie, Valor
 
-# Séries acompanhadas pelo projeto (modelo.md, seções 2.1, 2.4 e 10).
+# Séries acompanhadas pelo projeto.
 SERIES_PADRAO: list[dict] = [
     {
         "codigo_sgs": 432,

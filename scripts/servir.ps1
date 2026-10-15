@@ -27,7 +27,7 @@ try {
     if (-not (Test-Path '.env')) {
         Write-Host "[aviso] nao existe .env neste projeto. O padrao funciona, mas sem ele voce"
         Write-Host "        nao ajusta DB_URL. Para criar:"
-        Write-Host "        powershell -ExecutionPolicy Bypass -File `"$env:USERPROFILE\.copilot\templates\env\novo-env.ps1`" -Destino `"$raiz`""
+        Write-Host "        Copy-Item .env.example .env"
     }
 
     $urlBase = "http://${Endereco}:${Porta}"

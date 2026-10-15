@@ -1,4 +1,4 @@
--- Esquema do banco do selic-ipca-tracker (modelo.md, secao 6).
+-- Esquema do banco do selic-ipca-tracker (referencia do modelo SQLAlchemy).
 -- Referencia: o SQLAlchemy cria exatamente estas tabelas na subida da aplicacao
 -- (src/db/models.py). Este arquivo serve para consulta manual e para recriar o
 -- banco sem Python.

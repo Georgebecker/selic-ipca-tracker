@@ -55,7 +55,7 @@ p {
   margin: 0;
 }
 
-/* ---------- card com glassmorphism (modelo.md, secao 8) ---------- */
+/* ---------- card com glassmorphism (vidro fosco translucido) ---------- */
 .card {
   background: var(--vidro);
   backdrop-filter: blur(12px);

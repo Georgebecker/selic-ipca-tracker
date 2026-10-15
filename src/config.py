@@ -1,7 +1,7 @@
 """Configuração do projeto: lê o `.env` (local, fora do git) e expõe os ajustes do código.
 
 Nenhum segredo vive aqui: as chaves e caminhos locais ficam no `.env`, que nunca é
-versionado (ver REGRAS_DE_OURO.md e o gancho .githooks/pre-commit).
+versionado (o gancho .githooks/pre-commit barra o commit que traga valor de chave).
 """
 
 from __future__ import annotations

@@ -24,7 +24,7 @@ O único arquivo `.env*` permitido é o `.env.example` (modelo, sem valores).
 | `NOME_DE_CHAVE` + `=`/`:` + valor de 16+ caracteres | atribuição em qualquer arquivo |
 
 O valor da chave não mora em arquivo: mora na **variável de ambiente do usuário** do
-Windows. Use `segredos.ps1 -Definir NOME_DA_CHAVE`.
+Windows. Defina-a no escopo do usuario (nunca no arquivo).
 
 ## Instalação
 
@@ -32,8 +32,7 @@ Windows. Use `segredos.ps1 -Definir NOME_DA_CHAVE`.
 # neste projeto (o script roda a partir de .githooks/)
 powershell -ExecutionPolicy Bypass -File .githooks\instalar.ps1
 
-# em todos os repositórios de uma raiz
-powershell -ExecutionPolicy Bypass -File "$env:USERPROFILE\.copilot\scripts\instalar-hooks.ps1" -Destino "D:\Projetos" -Todos
+# em outros repositórios, repita a instalação dentro de cada projeto
 ```
 
 O instalador copia estes arquivos para `.githooks/` do projeto, garante fim de linha
