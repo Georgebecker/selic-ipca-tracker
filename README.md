@@ -11,12 +11,13 @@
 | **O que estou treinando** | séries temporais, composição de taxas, banco SQLite, layout responsivo |
 | **Quem usaria** | devs iniciantes, curiosos sobre inflação e juros no Brasil |
 
-> Nota de honestidade (regras R-CL1, R-CL2 e R-CL5 do `modelo.md`), conferida em
-> 14/10/2026:
+> Nota de honestidade (regras R-CL1, R-CL2 e R-CL5 do `modelo.md`), reconferida em
+> 15/10/2026:
 > - `estável` exige README + testes passando + push + **CI** + **release** + manutenção
->   contínua. Está tudo de pé: 57 testes, CI verde em Python 3.12 e 3.13
->   (`actions/workflows/ci.yml`), release **v0.2.0** publicada e o Loop de melhoria
->   contínua rodando com registro em `meu-loop-agente/log.md`.
+>   contínua. Está tudo de pé: **108 testes** (rodados nesta máquina em 15/10/2026),
+>   CI verde em Python 3.12 e 3.13 (`actions/workflows/ci.yml`), release **v0.2.0**
+>   publicada e o Loop de melhoria contínua rodando com registro em
+>   `meu-loop-agente/log.md`.
 > - O propósito **não** inclui `entrega` porque ainda não há uso real demonstrado por
 >   terceiros (R-CL1: `entrega` exige README, teste e uso real). Hoje o repositório é
 >   privado e sem usuários externos — dizer `entrega` seria inflar a classificação.
@@ -25,6 +26,59 @@ Acompanhamento de indicadores econômicos brasileiros (Selic, IPCA, IGP-M e INPC
 com coleta no Banco Central, banco SQLite, API REST documentada e dashboard web
 responsivo (dark mode, gráficos comparativos, calculadora de correção monetária e
 atualização sob demanda por botão — os dados são mensais, não há contagem regressiva).
+
+## Telas
+
+![Dashboard completo no desktop: KPIs, expectativas do Focus, gráfico comparativo, calculadora e tabela dos últimos 12 meses](img/dashboard-desktop.png)
+
+*Desktop em 1440 px, com dados reais da coleta. De cima para baixo: os quatro KPIs, o
+painel do Focus (esperado × realizado), o gráfico comparativo, a calculadora de correção
+monetária e a tabela dos últimos 12 meses.*
+
+![O mesmo dashboard em 390 px, com os cards em uma coluna e a tabela rolando na horizontal](img/dashboard-mobile.png)
+
+*O mesmo painel em 390 px (celular): os cards viram uma coluna, a tabela rola na
+horizontal e a coluna do mês fica fixa à esquerda, para não se perder a referência.*
+
+| Expectativas do mercado (Focus) | Calculadora de correção monetária |
+|---|---|
+| ![Painel do Focus com mediana esperada, faixa, respondentes e diferença contra o realizado](img/painel-expectativas.png) | ![Calculadora mostrando R$ 1.000 corrigidos para R$ 1.446,51 pelo IPCA](img/calculadora.png) |
+| Mediana esperada, faixa (mín–máx), número de respondentes e a diferença em p.p. contra o realizado. | R$ 1.000,00 em 01/01/2020 viram R$ 1.446,51 pelo IPCA até 15/10/2026 (81 meses, +44,6511%). |
+
+As capturas são de **15/10/2026** e trazem os números reais da coleta daquele dia (não são
+mockups). Como regravá-las depois de uma nova coleta: [`img/README.md`](./img/README.md).
+
+## Como ler o painel
+
+**KPIs (Selic, IPCA, IGP-M, INPC).** Cada cartão mostra o **valor corrente** (a variação do
+último mês publicado), o **acumulado em 12 meses** e a **data de referência** do dado. A
+Selic é a exceção: o valor de cima é a meta definida pelo Copom (% ao ano) e o acumulado
+sai da série mensal equivalente (SGS 4390), porque taxa anualizada não se acumula somando.
+
+**O "(oficial: …)" no cartão do IPCA.** O acumulado de 12 meses é calculado por nós
+multiplicando as 12 taxas mensais; ao lado aparece o mesmo número publicado pelo BCB (série
+SGS 13522). Eles podem diferir em centésimos, e isso é esperado: o BCB acumula sobre valores
+não arredondados, então a diferença é o desvio da nossa conta contra a régua oficial — é
+exatamente o que a métrica do Loop mede (ver `meu-loop-agente/`).
+
+**Expectativas do mercado (Focus).** O SGS conta o passado; o boletim Focus conta a
+expectativa. O painel mostra a **mediana esperada** pelo mercado, a **faixa** entre o menor e
+o maior palpite, quantos **respondentes** enviaram e a data do boletim. A frase abaixo da
+tabela compara a expectativa de IPCA 12 meses com o realizado oficial e dá a diferença em
+**pontos percentuais**: diferença positiva = o mercado espera mais inflação do que veio;
+negativa = espera menos.
+
+**Comparativo de índices.** Gráfico de linhas com IPCA, IGP-M, INPC e Selic no mesmo eixo de
+meses, com atalhos de 1, 5 e 10 anos e "Tudo" (o histórico coletado, mensal desde 2005). O
+valor exato de cada ponto está na tabela ao lado do gráfico.
+
+**Calculadora de correção monetária.** Multiplica os fatores mensais do índice escolhido no
+período (produto de `1 + i`, não soma) e mostra o valor corrigido, o fator acumulado e a
+variação percentual.
+
+**Últimos 12 meses.** Tabela mês a mês. O mês corrente aparece parcial ("—" em algumas
+colunas) porque cada instituto publica o índice do mês ao longo do mês seguinte — a nota
+abaixo da tabela lembra disso para o traço não parecer dado faltando.
 
 ## Como rodar
 
@@ -95,15 +149,19 @@ Tudo vem de APIs públicas do Banco Central, sem chave:
 selic-ipca-tracker/
 ├── src/
 │   ├── config.py             # leitura do .env e caminhos do projeto
-│   ├── etl/                  # bcb_sgs.py, limpeza.py, coleta.py
+│   ├── etl/                  # bcb_sgs.py (SGS), bcb_olinda.py (Focus), limpeza.py, coleta.py
 │   ├── db/                   # models.py (SQLAlchemy), repository.py
 │   ├── analise/              # calculos.py, comparacao.py
-│   ├── api/                  # main.py, schemas.py, routers/
+│   ├── api/                  # main.py, schemas.py, execucao.py, routers/
 │   └── scheduler/timer.py    # agendador opcional (APScheduler)
 ├── frontend/                 # index.html, style.css, app.js (Chart.js)
+├── scripts/                  # servir.ps1, coletar.ps1, backup.ps1
 ├── tests/                    # test_etl, test_calculos, test_api, test_classificacao
+├── img/                      # capturas do dashboard usadas neste README
 ├── sql/schema.sql            # esquema do banco (referência)
 ├── meu-loop-agente/          # contrato e verificador do Loop de melhoria contínua
+├── NOTES.md                  # decisões técnicas e o porquê de cada uma
+├── log_loop.md               # ciclos do Loop (hipótese, métrica antes/depois, decisão)
 └── data/                     # banco SQLite local (fora do git)
 ```
 
